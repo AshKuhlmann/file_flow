@@ -1,0 +1,13 @@
+name: Coverage
+on: [push, pull_request]
+jobs:
+  codecov:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install poetry
+      - run: poetry install
+      - run: poetry run pytest --cov=sorter --cov-report=xml
+      - uses: codecov/codecov-action@v4
