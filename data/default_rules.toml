@@ -1,0 +1,8 @@
+[ext]
+".pdf" = "Documents"
+".txt" = "Documents"
+".mp4" = "Videos"
+".mp3" = "Audio"
+".jpg" = "Pictures"
+".jpeg" = "Pictures"
+".png" = "Pictures"
