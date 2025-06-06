@@ -21,3 +21,6 @@ black = "^25.1.0"
 mypy = "^1.16.0"
 pytest = "^8.4.0"
 
+[tool.poetry.scripts]
+file-sorter = "sorter.cli:app"
+
