@@ -18,3 +18,9 @@ pip install file-sorter
 file-sorter move ~/Downloads --dest ~/Sorted --dry-run
 ```
 
+
+## Desktop GUI
+After installing, launch with:
+```bash
+file-sorter-gui
+```
