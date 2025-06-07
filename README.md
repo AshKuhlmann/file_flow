@@ -1,6 +1,6 @@
 # File-Sorter
 
-![CI](https://github.com/<ORG>/file-sorter/actions/workflows/ci.yml/badge.svg) ![Coverage](https://codecov.io/gh/<ORG>/file-sorter/branch/main/graph/badge.svg) ![PyPI](https://img.shields.io/pypi/v/file-flow) ![Docs](https://img.shields.io/badge/docs-online-blue)
+![CI](https://github.com/<ORG>/file-sorter/actions/workflows/ci.yml/badge.svg) ![Coverage](https://codecov.io/gh/<ORG>/file-sorter/branch/main/graph/badge.svg) ![PyPI](https://img.shields.io/pypi/v/file-sorter) ![Docs](https://img.shields.io/badge/docs-online-blue)
 
 File-Sorter automatically organizes messy download folders. Point it at a directory and it will classify, rename and move files in seconds.
 
@@ -10,7 +10,7 @@ File-Sorter automatically organizes messy download folders. Point it at a direct
 
 ## Installation
 ```bash
-pip install file-flow
+pip install file-sorter
 ```
 
 ## Basic Usage

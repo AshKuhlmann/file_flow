@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "file-flow"
-version = "0.1.0"
+version = "1.0.0"
 description = "A lightweight utility for sorting files."
 authors = ["Your Name <you@example.com>"]
 packages = [
