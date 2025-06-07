@@ -48,6 +48,22 @@ def schedule(
     print("[green]Scheduler entry installed.[/green]")
 
 
+@app.command()  # type: ignore[misc]
+def stats(
+    logs_dir: pathlib.Path = typer.Argument(..., dir_okay=True),
+    out: pathlib.Path = typer.Option(None, "--out", file_okay=True),
+) -> None:
+    """Generate HTML analytics dashboard from move logs."""
+    logs = sorted(logs_dir.glob("file-sort-log_*.jsonl"))
+    if not logs:
+        print("[red]No log files found.[/red]")
+        raise typer.Exit(1)
+    from .stats import build_dashboard
+
+    dash = build_dashboard(logs, dest=out)
+    print(f"[green]Dashboard written to {dash}[/green]")
+
+
 def main() -> None:
     app()
 
