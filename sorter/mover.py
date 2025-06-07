@@ -21,8 +21,9 @@ else:
 _HAS_RICH = False
 _RealProgress: type[Progress] | None
 try:
-    from rich.progress import Progress as _RealProgress
+    from rich.progress import Progress as _RichProgress
 
+    _RealProgress = _RichProgress
     _HAS_RICH = True
 except ModuleNotFoundError:
     _RealProgress = None
