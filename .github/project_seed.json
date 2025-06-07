@@ -1,0 +1,14 @@
+{
+  "name": "v1.1 Board",
+  "description": "Planning for v1.1",
+  "columns": [
+    {"name": "Backlog"},
+    {"name": "In Progress"},
+    {"name": "Done"}
+  ],
+  "cards": [
+    {"note": "Duplicate Finder plugin", "column": "Backlog", "milestone": "v1.1"},
+    {"note": "GUI shell", "column": "Backlog", "milestone": "v1.1"},
+    {"note": "Nightly cron dry-run", "column": "Backlog", "milestone": "v1.1"}
+  ]
+}

@@ -18,5 +18,3 @@ pip install file-flow
 file-sorter move ~/Downloads --dest ~/Sorted --dry-run
 ```
 
-See docs \u27F6
-
