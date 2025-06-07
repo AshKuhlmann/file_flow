@@ -34,6 +34,20 @@ def dupes(
         print("⚠️  hardlink requires delete_older to leave single copy.")
 
 
+@app.command()  # type: ignore[misc]
+def schedule(
+    cron: str = typer.Option("0 3 * * *", help="cron expression"),
+    dirs: list[pathlib.Path] = typer.Argument(...),
+    dest: pathlib.Path = typer.Option(..., "--dest"),
+) -> None:
+    """Install nightly dry-run that emails report."""
+    from .scheduler import validate_cron, install_job
+
+    validate_cron(cron)
+    install_job(cron, dirs=[*dirs], dest=dest)
+    print("[green]Scheduler entry installed.[/green]")
+
+
 def main() -> None:
     app()
 

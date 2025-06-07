@@ -29,3 +29,8 @@ file-sorter-gui
 ```bash
 file-sorter dupes ~/Downloads
 ```
+
+## Scheduling
+```bash
+file-sorter schedule "0 3 * * *" ~/Downloads --dest ~/Sorted
+```

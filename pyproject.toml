@@ -16,6 +16,8 @@ openpyxl = "*"
 rich = "*"
 sentry-sdk = "*"
 pyqt6 = "*"
+croniter = "^6.0.0"
+python-dateutil = "^2.9.0.post0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.11.13"
