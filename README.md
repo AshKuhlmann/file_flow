@@ -9,3 +9,13 @@ A lightweight utility for sorting files.
 ## Maintenance
 
 This project uses **Dependabot** for weekly dependency checks and **release-please** to automate versioning and changelog generation. Code coverage results are uploaded to Codecov.
+
+## Contributing & Roadmap
+
+- Use the issue and PR templates in `.github` to report bugs and propose features.
+- Run `scripts/run_benchmarks.sh` for performance baselines.
+
+### v1.1 Targets
+- Duplicate Finder plugin
+- GUI shell
+- Nightly cron dry-run scheduler
