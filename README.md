@@ -51,3 +51,4 @@ After installation, the following checks run on each commit:
 - **flake8** for linting
 - **mypy** for type checking
 - **pytest** for unit tests
+- **poetry lock** to update dependencies when `pyproject.toml` changes

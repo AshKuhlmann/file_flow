@@ -15,6 +15,11 @@ repos:
         args: [--ignore-missing-imports]
   - repo: local
     hooks:
+      - id: poetry-lock
+        name: poetry lock
+        entry: poetry lock
+        language: system
+        files: ^pyproject\.toml$
       - id: pytest
         name: pytest
         entry: pytest
