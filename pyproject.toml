@@ -40,3 +40,4 @@ python_files = ["test_*.py", "benchmark_*.py"]
 
 [tool.poetry.scripts]
 file-sorter-gui = "sorter_gui.app:main"
+file-sorter = "sorter.cli:app"
