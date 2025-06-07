@@ -1,0 +1,6 @@
+blank_issues_enabled: false
+issue_templates:
+  - name: bug_report.yml
+    labels: [bug]
+  - name: feature_request.yml
+    labels: [enhancement]
