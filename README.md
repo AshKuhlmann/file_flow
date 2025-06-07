@@ -1,21 +1,20 @@
-# file-flow
+# File-Sorter
 
-![CI](https://github.com/<ORG>/file-sorter/actions/workflows/ci.yml/badge.svg)
-![Coverage](https://codecov.io/gh/<ORG>/file-sorter/branch/main/graph/badge.svg)
-![Release](https://img.shields.io/github/v/release/<ORG>/file-sorter)
+![CI](https://github.com/<ORG>/file-sorter/actions/workflows/ci.yml/badge.svg) ![Coverage](https://codecov.io/gh/<ORG>/file-sorter/branch/main/graph/badge.svg) ![PyPI](https://img.shields.io/pypi/v/file-flow) ![Docs](https://img.shields.io/badge/docs-online-blue)
 
-A lightweight utility for sorting files.
+File-Sorter automatically organizes messy download folders. Point it at a directory and it will classify, rename and move files in seconds.
 
-## Maintenance
+## Quick Demo
 
-This project uses **Dependabot** for weekly dependency checks and **release-please** to automate versioning and changelog generation. Code coverage results are uploaded to Codecov.
+![Demo](media/demo.svg)
 
-## Contributing & Roadmap
+## Installation
+```bash
+pip install file-flow
+```
 
-- Use the issue and PR templates in `.github` to report bugs and propose features.
-- Run `scripts/run_benchmarks.sh` for performance baselines.
+## Basic Usage
+```bash
+file-sorter move ~/Downloads --dest ~/Sorted --dry-run
+```
 
-### v1.1 Targets
-- Duplicate Finder plugin
-- GUI shell
-- Nightly cron dry-run scheduler
