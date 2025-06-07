@@ -24,3 +24,8 @@ After installing, launch with:
 ```bash
 file-sorter-gui
 ```
+
+## Find Duplicates
+```bash
+file-sorter dupes ~/Downloads
+```

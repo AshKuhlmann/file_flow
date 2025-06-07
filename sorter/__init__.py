@@ -1,4 +1,5 @@
 from .scanner import scan_paths
+from .dupes import find_duplicates  # noqa: F401
 from .classifier import classify  # noqa: F401
 from .reporter import build_report  # noqa: F401
 from .review import ReviewQueue  # noqa: F401
@@ -13,5 +14,6 @@ __all__ = [
     "ReviewQueue",
     "generate_name",
     "move_with_log",
+    "find_duplicates",
     "rollback",
 ]

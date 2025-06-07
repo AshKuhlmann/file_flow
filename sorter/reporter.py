@@ -7,8 +7,8 @@ import subprocess
 import sys
 from typing import Iterable, Final, cast
 
-import pandas as _pd
-from openpyxl.utils import get_column_letter as _col
+import pandas as _pd  # type: ignore[import-untyped]
+from openpyxl.utils import get_column_letter as _col  # type: ignore[import-untyped]
 
 _DATE_FMT: Final = "%Y%m%d_%H%M%S"
 
