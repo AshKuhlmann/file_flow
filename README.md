@@ -40,3 +40,15 @@ Generate an interactive dashboard from your move logs:
 ```bash
 file-sorter stats ~/Downloads
 ```
+
+## Development
+Set up pre-commit hooks to automatically run formatting and tests:
+```bash
+pre-commit install
+```
+After installation, the following checks run on each commit:
+- **black** for code formatting
+- **flake8** for linting
+- **mypy** for type checking
+- **pytest** for unit tests
+- **poetry lock** to update dependencies when `pyproject.toml` changes
