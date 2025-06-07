@@ -9,7 +9,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.9"
-slugify = "*"
+python-slugify = "*"
 python-magic = "*"
 pandas = "*"
 openpyxl = "*"
@@ -20,7 +20,8 @@ sentry-sdk = "*"
 ruff = "^0.11.13"
 black = "^25.1.0"
 mypy = "^1.16.0"
-pytest = "^8.4.0"
+pytest = "^8.2.0"
+pytest-cov = "^5.0.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
