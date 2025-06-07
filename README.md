@@ -34,3 +34,9 @@ file-sorter dupes ~/Downloads
 ```bash
 file-sorter schedule "0 3 * * *" ~/Downloads --dest ~/Sorted
 ```
+
+## Analytics
+Generate an interactive dashboard from your move logs:
+```bash
+file-sorter stats ~/Downloads
+```
