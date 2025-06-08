@@ -1,6 +1,7 @@
 import pathlib
 import json
 import joblib
+import logging
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import Pipeline
@@ -10,12 +11,16 @@ from .ml_features import extract_raw_features, create_feature_pipeline
 
 MODEL_PATH = pathlib.Path.home() / ".file-sorter" / "supervised_model.joblib"
 
+log = logging.getLogger(__name__)
+
 
 def train_supervised_model(logs_dir: pathlib.Path):
     """Train a Random Forest model from log files."""
     log_files = list(logs_dir.glob("file-sort-log_*.jsonl"))
     if not log_files:
-        print("No log files found. Sort some files first to create training data.")
+        log.info(
+            "No log files found. Sort some files first to create training data."
+        )
         return
 
     records = []
@@ -27,7 +32,7 @@ def train_supervised_model(logs_dir: pathlib.Path):
     log_df = pd.DataFrame(records)
     log_df["path"] = log_df["src"].apply(pathlib.Path)
 
-    print(f"Loaded {len(log_df)} records from logs.")
+    log.info("Loaded %d records from logs.", len(log_df))
 
     feature_df = extract_raw_features(log_df["path"].tolist())
     training_df = pd.merge(feature_df, log_df[["path", "category"]], on="path")
@@ -50,12 +55,12 @@ def train_supervised_model(logs_dir: pathlib.Path):
         ]
     )
 
-    print("Training supervised classification model...")
+    log.info("Training supervised classification model...")
     model_pipeline.fit(X, y_encoded)
 
     MODEL_PATH.parent.mkdir(exist_ok=True)
     joblib.dump({"model": model_pipeline, "labels": label_encoder}, MODEL_PATH)
-    print(f"Supervised model saved to {MODEL_PATH}")
+    log.info("Supervised model saved to %s", MODEL_PATH)
 
 
 def predict_category(file_path: pathlib.Path) -> str | None:

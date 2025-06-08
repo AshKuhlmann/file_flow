@@ -4,8 +4,9 @@ import pathlib
 import json
 
 import typer
-from rich import print
+import logging
 
+from .logging_config import setup_logging
 from .scanner import scan_paths
 from .classifier import classify_file
 from .config import load_config
@@ -20,17 +21,25 @@ from . import clustering
 from . import supervised
 
 
-app = typer.Typer(add_completion=False, rich_markup_mode="rich")
+app = typer.Typer(
+    add_completion=False,
+    rich_markup_mode="rich",
+    context_settings={"help_option_names": ["-h", "--help"]},
+)
+
+log = logging.getLogger(__name__)
 
 
 @app.callback()
 def _global_options(
-    verbose: bool = typer.Option(False, "--verbose", help="enable verbose output"),
+    verbose: bool = typer.Option(
+        False, "-v", "--verbose", help="Enable verbose DEBUG level logging."
+    ),
 ) -> None:
-    """Global options that may be ignored for now."""
-    if not verbose:
-        return
-    # No structured verbosity yet; placeholder for future diagnostics
+    """Global options for the file-sorter CLI."""
+    log_level = logging.DEBUG if verbose else logging.INFO
+    setup_logging(console_level=log_level)
+    log.debug("Verbose logging enabled.")
 
 
 @app.command()
@@ -42,9 +51,9 @@ def scan(
     """Scan directories and report file count."""
     try:
         files = scan_paths(dirs)
-        print(f"[green]{len(files)} files found.[/green]")
+        log.info("%d files found.", len(files))
     except Exception as exc:  # pragma: no cover - defensive
-        print(f"[red]{exc}[/red]")
+        log.error("%s", exc)
         raise typer.Exit(1)
 
 
@@ -67,9 +76,9 @@ def report(
             mapping.append((f, generate_name(f, target_dir)))
 
         out = build_report(mapping, auto_open=auto_open)
-        print(f"[bold]Report ready:[/bold] {out}")
+        log.info("Report ready: %s", out)
     except Exception as exc:  # pragma: no cover - defensive
-        print(f"[red]{exc}[/red]")
+        log.error("%s", exc)
         raise typer.Exit(1)
 
 
@@ -86,13 +95,13 @@ def review(
         queue.upsert_files(files)
         due = queue.select_for_review(limit=5)
         if not due:
-            print("[green]No files pending review.[/green]")
+            log.info("No files pending review.")
             return
-        print("[bold]Files to review:[/bold]")
+        log.info("Files to review:")
         for p in due:
-            print(f"  • {p}")
+            log.info("  • %s", p)
     except Exception as exc:  # pragma: no cover - defensive
-        print(f"[red]{exc}[/red]")
+        log.error("%s", exc)
         raise typer.Exit(1)
 
 
@@ -131,16 +140,20 @@ def move(
             mapping.append((f, final_dest))
 
         report_path = build_report(mapping, auto_open=False)
-        print(f"[bold]Report ready:[/bold] {report_path}")
+        log.info("Report ready: %s", report_path)
+
         if dry_run:
-            print("[yellow]Dry-run complete — no files moved.[/yellow]")
+            log.warning("Dry-run complete — no files were moved.")
             return
+
         if not yes and not typer.confirm("Proceed with move?"):
+            log.info("User cancelled operation.")
             return
+
         log_path = move_with_log(mapping)
-        print(f"[green]Move done.[/green] Log: {log_path}")
+        log.info("Move complete. Log available at: %s", log_path)
     except Exception as exc:  # pragma: no cover - defensive
-        print(f"[red]{exc}[/red]")
+        log.error(f"An operation failed: {exc}", exc_info=True)
         raise typer.Exit(1)
 
 
@@ -151,9 +164,9 @@ def undo(
     """Undo file moves recorded in *log_file*."""
     try:
         rollback(log_file)
-        print("[green]Rollback complete.[/green]")
+        log.info("Rollback complete.")
     except Exception as exc:  # pragma: no cover - defensive
-        print(f"[red]{exc}[/red]")
+        log.error("%s", exc)
         raise typer.Exit(1)
 
 
@@ -170,18 +183,18 @@ def dupes(
     files = scan_paths(dirs)
     groups = find_duplicates(files)
     if not groups:
-        print("[green]No duplicates detected.")
+        log.info("No duplicates detected.")
         return
     for digest, paths in groups.items():
-        print(f"[bold yellow]{len(paths)}×[/bold yellow] {digest[:10]} →")
+        log.info("Found group with hash %s containing %d files:", digest[:10], len(paths))
         for p in paths:
-            print(f"  • {p}")
+            log.info("  • %s", p)
     if delete_older and typer.confirm("Delete older copies?"):
         for paths in groups.values():
             for removed in _delete_older(paths):
-                print(f"[red]- deleted[/red] {removed}")
+                log.info("- deleted %s", removed)
     if hardlink and not delete_older:
-        print("⚠️  hardlink requires delete_older to leave single copy.")
+        log.warning("⚠️  hardlink requires delete_older to leave single copy.")
 
 
 @app.command()
@@ -195,7 +208,7 @@ def schedule(
 
     validate_cron(cron)
     install_job(cron, dirs=[*dirs], dest=dest)
-    print("[green]Scheduler entry installed.[/green]")
+    log.info("Scheduler entry installed.")
 
 
 @app.command()
@@ -206,12 +219,12 @@ def stats(
     """Generate HTML analytics dashboard from move logs."""
     logs = sorted(logs_dir.glob("file-sort-log_*.jsonl"))
     if not logs:
-        print("[red]No log files found.[/red]")
+        log.error("No log files found.")
         raise typer.Exit(1)
     from .stats import build_dashboard
 
     dash = build_dashboard(logs, dest=out)
-    print(f"[green]Dashboard written to {dash}[/green]")
+    log.info("Dashboard written to %s", dash)
 
 
 @app.command()
@@ -230,9 +243,9 @@ def learn_clusters(
 
     cluster_labels: dict[str, str] = {}
     for cluster_id, group in clustered_df.groupby("cluster"):
-        print(f"\n--- Cluster {cluster_id} ---")
+        log.info("\n--- Cluster %s ---", cluster_id)
         sample_files = [path.name for path in group["path"].head(5)]
-        print("Contains files like:", ", ".join(sample_files))
+        log.info("Contains files like: %s", ", ".join(sample_files))
         category_name = typer.prompt(
             "What would you like to name this category? (or press Enter to skip)"
         )
@@ -242,7 +255,7 @@ def learn_clusters(
     if cluster_labels:
         with open(clustering.LABELS_PATH, "w") as f:
             json.dump(cluster_labels, f)
-        print(f"\nCategory labels saved to {clustering.LABELS_PATH}")
+        log.info("\nCategory labels saved to %s", clustering.LABELS_PATH)
 
 
 @app.command()
