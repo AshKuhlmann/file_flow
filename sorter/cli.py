@@ -5,6 +5,7 @@ import json
 
 import typer
 import logging
+from . import __version__
 
 from .logging_config import setup_logging
 from .scanner import scan_paths
@@ -27,10 +28,24 @@ app = typer.Typer(
 log = logging.getLogger(__name__)
 
 
-@app.callback()
+def _version_callback(value: bool) -> None:
+    if value:
+        typer.echo(__version__)
+        raise typer.Exit()
+
+
+@app.callback(invoke_without_command=True)
 def _global_options(
+    ctx: typer.Context,
     verbose: bool = typer.Option(
         False, "-v", "--verbose", help="Enable verbose DEBUG level logging."
+    ),
+    version: bool = typer.Option(
+        False,
+        "--version",
+        callback=_version_callback,
+        is_eager=True,
+        help="Show the application version and exit.",
     ),
 ) -> None:
     """Global options for the file-sorter CLI."""

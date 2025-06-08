@@ -130,3 +130,10 @@ def test_move_destination_exists(tmp_path, monkeypatch):
     )
     assert result.exit_code == 1
     assert "destination already exists" in result.stdout
+
+
+def test_version_option():
+    runner = CliRunner()
+    result = runner.invoke(app, ["--version"])
+    assert result.exit_code == 0
+    assert "1.0.0" in result.stdout
