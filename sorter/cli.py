@@ -14,6 +14,7 @@ from .review import ReviewQueue
 from .mover import move_with_log
 from .planner import plan_moves
 from .dupes import find_duplicates, delete_older as _delete_older
+from .cli_utils import handle_cli_errors
 
 
 app = typer.Typer(
@@ -54,6 +55,7 @@ def _global_options(
         log.debug("Logging level: %s", logging.getLevelName(log_level))
 
 
+@handle_cli_errors
 @app.command()
 def scan(
     dirs: list[pathlib.Path] = typer.Argument(
@@ -61,29 +63,20 @@ def scan(
     )
 ) -> None:
     """Scan directories and report file count."""
-    try:
-        log.debug("Scanning %d root directories", len(dirs))
-        if log.isEnabledFor(logging.DEBUG):
-            for d in dirs:
-                log.debug(" - %s", d)
+    log.debug("Scanning %d root directories", len(dirs))
+    if log.isEnabledFor(logging.DEBUG):
+        for d in dirs:
+            log.debug(" - %s", d)
 
-        files = scan_paths(dirs)
+    files = scan_paths(dirs)
 
-        log.info("%d files found.", len(files))
-        if log.isEnabledFor(logging.DEBUG):
-            for f in files:
-                log.debug("found: %s", f)
-    except PermissionError as exc:
-        log.error("Permission denied while scanning: %s", exc)
-        raise typer.Exit(1)
-    except OSError as exc:  # pragma: no cover - unexpected filesystem issue
-        log.error("Failed to scan directories: %s", exc)
-        raise typer.Exit(1)
-    except Exception as exc:  # pragma: no cover - defensive
-        log.exception("Unexpected error during scan: %s", exc)
-        raise typer.Exit(1)
+    log.info("%d files found.", len(files))
+    if log.isEnabledFor(logging.DEBUG):
+        for f in files:
+            log.debug("found: %s", f)
 
 
+@handle_cli_errors
 @app.command()
 def report(
     dirs: list[pathlib.Path] = typer.Argument(
@@ -95,31 +88,18 @@ def report(
     fmt: str = typer.Option("xlsx", "--format", help="output format: xlsx, csv, json"),
 ) -> None:
     """Generate a report describing proposed moves."""
-    try:
-        log.debug("Generating report from %d source dirs", len(dirs))
-        base = dest or pathlib.Path.cwd()
-        mapping = plan_moves(dirs, base, pattern=pattern)
-        log.info("%d files will be included in the report", len(mapping))
-        for src, dst in mapping:
-            log.debug("map %s -> %s", src, dst)
+    log.debug("Generating report from %d source dirs", len(dirs))
+    base = dest or pathlib.Path.cwd()
+    mapping = plan_moves(dirs, base, pattern=pattern)
+    log.info("%d files will be included in the report", len(mapping))
+    for src, dst in mapping:
+        log.debug("map %s -> %s", src, dst)
 
-        out = build_report(mapping, auto_open=auto_open, fmt=fmt)
-        log.info("Report ready: %s", out)
-    except ModuleNotFoundError as exc:
-        log.error(
-            "Missing dependency '%s'. Install optional reporting extras "
-            "to use this command.",
-            exc.name,
-        )
-        raise typer.Exit(1)
-    except PermissionError as exc:
-        log.error("Permission denied while generating report: %s", exc)
-        raise typer.Exit(1)
-    except Exception as exc:  # pragma: no cover - defensive
-        log.exception("Unexpected error during report generation: %s", exc)
-        raise typer.Exit(1)
+    out = build_report(mapping, auto_open=auto_open, fmt=fmt)
+    log.info("Report ready: %s", out)
 
 
+@handle_cli_errors
 @app.command()
 def review(
     dirs: list[pathlib.Path] = typer.Argument(
@@ -127,25 +107,18 @@ def review(
     )
 ) -> None:
     """Add files to review queue and list any due today."""
-    try:
-        log.debug("Updating review queue from %d dirs", len(dirs))
-        files = scan_paths(dirs)
-        log.info("%d files scanned for review", len(files))
-        queue = ReviewQueue()
-        queue.upsert_files(files)
-        due = queue.select_for_review(limit=5)
-        if not due:
-            log.info("No files pending review.")
-            return
-        log.info("Files to review:")
-        for p in due:
-            log.info("  • %s", p)
-    except PermissionError as exc:
-        log.error("Permission denied while updating review queue: %s", exc)
-        raise typer.Exit(1)
-    except Exception as exc:  # pragma: no cover - defensive
-        log.exception("Unexpected error during review operation: %s", exc)
-        raise typer.Exit(1)
+    log.debug("Updating review queue from %d dirs", len(dirs))
+    files = scan_paths(dirs)
+    log.info("%d files scanned for review", len(files))
+    queue = ReviewQueue()
+    queue.upsert_files(files)
+    due = queue.select_for_review(limit=5)
+    if not due:
+        log.info("No files pending review.")
+        return
+    log.info("Files to review:")
+    for p in due:
+        log.info("  • %s", p)
 
 
 @app.command()
@@ -186,43 +159,19 @@ def move(
     except FileExistsError as exc:
         log.error("Move aborted: destination already exists (%s)", exc)
         raise typer.Exit(1)
-    except ModuleNotFoundError as exc:
-        log.error(
-            "Missing dependency '%s'. Install optional extras to enable moving.",
-            exc.name,
-        )
-        raise typer.Exit(1)
-    except PermissionError as exc:
-        log.error("Permission denied while moving files: %s", exc)
-        raise typer.Exit(1)
-    except Exception as exc:  # pragma: no cover - defensive
-        log.exception("Unexpected error during move: %s", exc)
-        raise typer.Exit(1)
 
 
+@handle_cli_errors
 @app.command()
 def undo(
     log_file: pathlib.Path = typer.Argument(..., exists=True, readable=True)
 ) -> None:
     """Undo file moves recorded in *log_file*."""
-    try:
-        log.debug("Rolling back moves using log %s", log_file)
-        from .rollback import rollback as _rollback
+    log.debug("Rolling back moves using log %s", log_file)
+    from .rollback import rollback as _rollback
 
-        _rollback(log_file)
-        log.info("Rollback complete.")
-    except FileNotFoundError as exc:
-        log.error("Log file not found: %s", exc)
-        raise typer.Exit(1)
-    except ValueError as exc:
-        log.error("Rollback failed due to integrity error: %s", exc)
-        raise typer.Exit(1)
-    except PermissionError as exc:
-        log.error("Permission denied during rollback: %s", exc)
-        raise typer.Exit(1)
-    except Exception as exc:  # pragma: no cover - defensive
-        log.exception("Unexpected error during rollback: %s", exc)
-        raise typer.Exit(1)
+    _rollback(log_file)
+    log.info("Rollback complete.")
 
 
 # Existing commands -------------------------------------------------------
@@ -264,6 +213,7 @@ def dupes(
         log.warning("⚠️  hardlink requires delete_older to leave single copy.")
 
 
+@handle_cli_errors
 @app.command()
 def schedule(
     cron: str = typer.Option("0 3 * * *", help="cron expression"),
@@ -279,6 +229,7 @@ def schedule(
     log.info("Scheduler entry installed.")
 
 
+@handle_cli_errors
 @app.command()
 def stats(
     logs_dir: pathlib.Path = typer.Argument(..., dir_okay=True),
@@ -292,28 +243,12 @@ def stats(
         raise typer.Exit(1)
     from .stats import build_dashboard
 
-    try:
-        dash = build_dashboard(logs, dest=out)
-        log.info("Dashboard written to %s", dash)
-        log.debug("Processed %d log files", len(logs))
-    except ModuleNotFoundError as exc:
-        log.error(
-            "Missing dependency '%s'. Install optional stats extras "
-            "to use this command.",
-            exc.name,
-        )
-        raise typer.Exit(1)
-    except ValueError as exc:
-        log.error("Cannot build dashboard: %s", exc)
-        raise typer.Exit(1)
-    except PermissionError as exc:
-        log.error("Permission denied while writing dashboard: %s", exc)
-        raise typer.Exit(1)
-    except Exception as exc:  # pragma: no cover - defensive
-        log.exception("Unexpected error while building dashboard: %s", exc)
-        raise typer.Exit(1)
+    dash = build_dashboard(logs, dest=out)
+    log.info("Dashboard written to %s", dash)
+    log.debug("Processed %d log files", len(logs))
 
 
+@handle_cli_errors
 @app.command()
 def learn_clusters(
     source_dir: pathlib.Path = typer.Argument(..., exists=True, file_okay=False),
@@ -324,45 +259,32 @@ def learn_clusters(
     """Analyze a directory to discover and label potential file categories."""
     from . import clustering
 
-    try:
-        log.debug("Learning clusters from %s", source_dir)
-        files = scan_paths([source_dir])
-        clustered_df = clustering.train_cluster_model(files, n_clusters=clusters)
+    log.debug("Learning clusters from %s", source_dir)
+    files = scan_paths([source_dir])
+    clustered_df = clustering.train_cluster_model(files, n_clusters=clusters)
 
-        if clustered_df is None:
-            return
+    if clustered_df is None:
+        return
 
-        cluster_labels: dict[str, str] = {}
-        for cluster_id, group in clustered_df.groupby("cluster"):
-            log.info("\n--- Cluster %s ---", cluster_id)
-            sample_files = [path.name for path in group["path"].head(5)]
-            log.info("Contains files like: %s", ", ".join(sample_files))
-            category_name = typer.prompt(
-                "What would you like to name this category? (or press Enter to skip)"
-            )
-            if category_name:
-                cluster_labels[str(cluster_id)] = category_name
-
-        if cluster_labels:
-            with open(clustering.LABELS_PATH, "w") as f:
-                json.dump(cluster_labels, f)
-            log.info("\nCategory labels saved to %s", clustering.LABELS_PATH)
-            log.debug("Saved labels: %s", cluster_labels)
-    except ModuleNotFoundError as exc:
-        log.error(
-            "Missing dependency '%s'. Install optional clustering extras "
-            "to use this command.",
-            exc.name,
+    cluster_labels: dict[str, str] = {}
+    for cluster_id, group in clustered_df.groupby("cluster"):
+        log.info("\n--- Cluster %s ---", cluster_id)
+        sample_files = [path.name for path in group["path"].head(5)]
+        log.info("Contains files like: %s", ", ".join(sample_files))
+        category_name = typer.prompt(
+            "What would you like to name this category? (or press Enter to skip)"
         )
-        raise typer.Exit(1)
-    except PermissionError as exc:
-        log.error("Permission denied while writing cluster labels: %s", exc)
-        raise typer.Exit(1)
-    except Exception as exc:  # pragma: no cover - defensive
-        log.exception("Unexpected error during clustering: %s", exc)
-        raise typer.Exit(1)
+        if category_name:
+            cluster_labels[str(cluster_id)] = category_name
+
+    if cluster_labels:
+        with open(clustering.LABELS_PATH, "w") as f:
+            json.dump(cluster_labels, f)
+        log.info("\nCategory labels saved to %s", clustering.LABELS_PATH)
+        log.debug("Saved labels: %s", cluster_labels)
 
 
+@handle_cli_errors
 @app.command()
 def train(
     logs_dir: pathlib.Path = typer.Argument(
@@ -373,19 +295,8 @@ def train(
     """Train a personalized classifier based on your move history."""
     from . import supervised
 
-    try:
-        log.debug("Training classifier using logs in %s", logs_dir)
-        supervised.train_supervised_model(logs_dir)
-    except ModuleNotFoundError as exc:
-        log.error(
-            "Missing dependency '%s'. Install optional training extras "
-            "to use this command.",
-            exc.name,
-        )
-        raise typer.Exit(1)
-    except Exception as exc:  # pragma: no cover - defensive
-        log.exception("Unexpected error during training: %s", exc)
-        raise typer.Exit(1)
+    log.debug("Training classifier using logs in %s", logs_dir)
+    supervised.train_supervised_model(logs_dir)
 
 
 def main() -> None:  # pragma: no cover - manual execution
