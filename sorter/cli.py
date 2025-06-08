@@ -36,7 +36,10 @@ def _global_options(
     """Global options for the file-sorter CLI."""
     log_level = logging.DEBUG if verbose else logging.INFO
     setup_logging(console_level=log_level)
-    log.debug("Verbose logging enabled.")
+    if verbose:
+        log.debug("Verbose logging enabled.")
+    else:
+        log.debug("Logging level: %s", logging.getLevelName(log_level))
 
 
 @app.command()
@@ -47,8 +50,17 @@ def scan(
 ) -> None:
     """Scan directories and report file count."""
     try:
+        log.debug("Scanning %d root directories", len(dirs))
+        if log.isEnabledFor(logging.DEBUG):
+            for d in dirs:
+                log.debug(" - %s", d)
+
         files = scan_paths(dirs)
+
         log.info("%d files found.", len(files))
+        if log.isEnabledFor(logging.DEBUG):
+            for f in files:
+                log.debug("found: %s", f)
     except PermissionError as exc:
         log.error("Permission denied while scanning: %s", exc)
         raise typer.Exit(1)
@@ -70,13 +82,17 @@ def report(
 ) -> None:
     """Generate an Excel report describing proposed moves."""
     try:
+        log.debug("Generating report from %d source dirs", len(dirs))
         files = scan_paths(dirs)
+        log.info("%d files will be included in the report", len(files))
         mapping: list[tuple[pathlib.Path, pathlib.Path]] = []
         base = dest or pathlib.Path.cwd()
         for f in files:
             cat = classify_file(f) or "Unsorted"
             target_dir = base / cat
-            mapping.append((f, generate_name(f, target_dir)))
+            new_path = generate_name(f, target_dir)
+            mapping.append((f, new_path))
+            log.debug("map %s -> %s", f, new_path)
 
         out = build_report(mapping, auto_open=auto_open)
         log.info("Report ready: %s", out)
@@ -103,7 +119,9 @@ def review(
 ) -> None:
     """Add files to review queue and list any due today."""
     try:
+        log.debug("Updating review queue from %d dirs", len(dirs))
         files = scan_paths(dirs)
+        log.info("%d files scanned for review", len(files))
         queue = ReviewQueue()
         queue.upsert_files(files)
         due = queue.select_for_review(limit=5)
@@ -132,17 +150,19 @@ def move(
 ) -> None:
     """Scan, classify and move files into *dest*."""
     try:
+        log.debug("Beginning move operation into %s", dest)
         config = load_config()
         plugin_manager = PluginManager(config)
         files = scan_paths(dirs)
+        log.info("%d files to process", len(files))
         mapping: list[tuple[pathlib.Path, pathlib.Path]] = []
         for f in files:
             cat = classify_file(f) or "Unsorted"
             target_dir = dest / cat
 
             new_stem_from_plugin = plugin_manager.rename_with_plugin(f)
-
             if new_stem_from_plugin:
+                log.debug("plugin renamed %s -> %s", f.name, new_stem_from_plugin)
                 temp_path_for_collision_check = f.with_stem(new_stem_from_plugin)
                 final_dest = generate_name(
                     temp_path_for_collision_check,
@@ -154,9 +174,11 @@ def move(
                 final_dest = generate_name(f, target_dir)
 
             mapping.append((f, final_dest))
+            log.debug("plan move %s -> %s", f, final_dest)
 
         report_path = build_report(mapping, auto_open=False)
         log.info("Report ready: %s", report_path)
+        log.debug("%d planned moves recorded", len(mapping))
 
         if dry_run:
             log.warning("Dry-run complete — no files were moved.")
@@ -168,6 +190,9 @@ def move(
 
         log_path = move_with_log(mapping)
         log.info("Move complete. Log available at: %s", log_path)
+        if log.isEnabledFor(logging.DEBUG):
+            for src, dst in mapping:
+                log.debug("moved %s -> %s", src, dst)
     except FileExistsError as exc:
         log.error("Move aborted: destination already exists (%s)", exc)
         raise typer.Exit(1)
@@ -191,6 +216,7 @@ def undo(
 ) -> None:
     """Undo file moves recorded in *log_file*."""
     try:
+        log.debug("Rolling back moves using log %s", log_file)
         from .rollback import rollback as _rollback
 
         _rollback(log_file)
@@ -219,7 +245,9 @@ def dupes(
     hardlink: bool = typer.Option(False, help="replace duplicates with hardlink"),
 ) -> None:
     """Find duplicate files by SHA-256 hash."""
+    log.debug("Scanning for duplicates in %d dirs", len(dirs))
     files = scan_paths(dirs)
+    log.info("Scanning %d files for duplicates", len(files))
     groups = find_duplicates(files)
     if not groups:
         log.info("No duplicates detected.")
@@ -230,6 +258,7 @@ def dupes(
             digest[:10],
             len(paths),
         )
+        log.debug("paths: %s", ", ".join(str(p) for p in paths))
         for p in paths:
             log.info("  • %s", p)
     if delete_older and typer.confirm("Delete older copies?"):
@@ -249,6 +278,7 @@ def schedule(
     """Install nightly dry-run that emails report."""
     from .scheduler import validate_cron, install_job
 
+    log.debug("Scheduling job '%s' for dirs: %s", cron, ", ".join(str(d) for d in dirs))
     validate_cron(cron)
     install_job(cron, dirs=[*dirs], dest=dest)
     log.info("Scheduler entry installed.")
@@ -260,6 +290,7 @@ def stats(
     out: pathlib.Path = typer.Option(None, "--out", file_okay=True),
 ) -> None:
     """Generate HTML analytics dashboard from move logs."""
+    log.debug("Building stats from logs in %s", logs_dir)
     logs = sorted(logs_dir.glob("file-sort-log_*.jsonl"))
     if not logs:
         log.error("No log files found.")
@@ -269,6 +300,7 @@ def stats(
     try:
         dash = build_dashboard(logs, dest=out)
         log.info("Dashboard written to %s", dash)
+        log.debug("Processed %d log files", len(logs))
     except ModuleNotFoundError as exc:
         log.error(
             "Missing dependency '%s'. Install optional stats extras "
@@ -298,6 +330,7 @@ def learn_clusters(
     from . import clustering
 
     try:
+        log.debug("Learning clusters from %s", source_dir)
         files = scan_paths([source_dir])
         clustered_df = clustering.train_cluster_model(files, n_clusters=clusters)
 
@@ -319,6 +352,7 @@ def learn_clusters(
             with open(clustering.LABELS_PATH, "w") as f:
                 json.dump(cluster_labels, f)
             log.info("\nCategory labels saved to %s", clustering.LABELS_PATH)
+            log.debug("Saved labels: %s", cluster_labels)
     except ModuleNotFoundError as exc:
         log.error(
             "Missing dependency '%s'. Install optional clustering extras "
@@ -345,6 +379,7 @@ def train(
     from . import supervised
 
     try:
+        log.debug("Training classifier using logs in %s", logs_dir)
         supervised.train_supervised_model(logs_dir)
     except ModuleNotFoundError as exc:
         log.error(
