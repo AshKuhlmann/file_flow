@@ -29,6 +29,7 @@ except Exception:  # pragma: no cover - optional dep missing
         text = re.sub(r"\s+", separator, text)
         return text
 
+
 _DATE_FMT: Final = "%Y-%m-%d"
 
 
@@ -38,11 +39,17 @@ def generate_name(
     *,
     include_parent: bool = True,
     date_from_mtime: bool = True,
+    pattern: str | None = None,
 ) -> pathlib.Path:
     """Return a collision-free destination path inside *target_dir*.
 
-    Naming pattern (default):
-      <parent-slug>_<YYYY-MM-DD>_<base-slug>[__<N>].<ext>
+    Naming pattern can be customized using ``pattern``. Tokens available:
+      ``{parent}`` - slugified parent directory name
+      ``{date}``   - formatted date string (YYYY-MM-DD)
+      ``{stem}``   - slugified base file name
+      ``{ext}``    - original file extension
+    Default pattern:
+      ``{parent}_{date}_{stem}{ext}`` with ``__N`` appended on collision.
     Rules:
       • parent-slug comes from ``src.parent.name`` (omit if ``include_parent`` is
         False or parent is root).
@@ -71,13 +78,29 @@ def generate_name(
     base_part = _slugify(src.stem) or "file"
     ext = src.suffix.lower()
 
-    pieces = [p for p in (parent_part, date_part, base_part) if p]
-    stem = "_".join(pieces)
+    tokens = {
+        "parent": parent_part,
+        "date": date_part,
+        "stem": base_part,
+        "ext": ext,
+    }
 
-    candidate = target_dir / f"{stem}{ext}"
+    if pattern:
+        name = pattern.format(**tokens)
+        candidate = target_dir / name
+        stem = pathlib.Path(name).stem
+        ext_in_pattern = pathlib.Path(name).suffix
+    else:
+        pieces = [p for p in (parent_part, date_part, base_part) if p]
+        stem = "_".join(pieces)
+        ext_in_pattern = ext
+        name = f"{stem}{ext_in_pattern}"
+        candidate = target_dir / name
+
     counter = 2
     existing = {p.name.lower() for p in target_dir.iterdir()}
     while candidate.name.lower() in existing:
-        candidate = target_dir / f"{stem}__{counter}{ext}"
+        candidate = target_dir / f"{stem}__{counter}{ext_in_pattern}"
         counter += 1
+
     return candidate.resolve()

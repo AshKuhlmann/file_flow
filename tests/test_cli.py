@@ -104,6 +104,28 @@ def test_move_dry_run(tmp_path, monkeypatch):
     assert "Dry-run" in result.stdout
 
 
+def test_move_custom_pattern(tmp_path, monkeypatch):
+    (tmp_path / "a.txt").write_text("x")
+    monkeypatch.setattr(
+        "sorter.cli.build_report", lambda *a, **k: tmp_path / "rep.xlsx"
+    )
+
+    captured = {}
+
+    def fake_gen(*args, **kwargs):
+        captured["pattern"] = kwargs.get("pattern")
+        return tmp_path / "dest" / "a.txt"
+
+    monkeypatch.setattr("sorter.cli.generate_name", fake_gen)
+    dest = tmp_path / "dest"
+    runner = CliRunner()
+    result = runner.invoke(
+        app, ["move", str(tmp_path), "--dest", str(dest), "--pattern", "{stem}{ext}"]
+    )
+    assert result.exit_code == 0
+    assert captured["pattern"] == "{stem}{ext}"
+
+
 def test_stats_no_logs(tmp_path):
     runner = CliRunner()
     result = runner.invoke(app, ["stats", str(tmp_path)])
