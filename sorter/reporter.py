@@ -43,12 +43,7 @@ def build_report(
             }
         )
 
-    df = _pd.DataFrame(
-        cast(
-            list[dict[str, str | int]],
-            sorted(rows, key=lambda r: cast(str, r["old_path"])),
-        )
-    )
+    df = _pd.DataFrame(sorted(rows, key=lambda r: cast(str, r["old_path"])))
 
     if dest is None:
         dest = (

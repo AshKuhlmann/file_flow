@@ -1,8 +1,6 @@
 import importlib
 import sys
 
-import pytest
-
 
 def test_import_without_dsn(monkeypatch):
     monkeypatch.delenv("FILE_SORTER_SENTRY_DSN", raising=False)

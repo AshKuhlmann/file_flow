@@ -5,10 +5,6 @@ import pathlib
 import io
 
 import pandas as _pd  # type: ignore[import-untyped]
-import matplotlib
-
-matplotlib.use("Agg")
-import matplotlib.pyplot as _plt
 
 
 def build_dashboard(
@@ -17,6 +13,11 @@ def build_dashboard(
     dest: pathlib.Path | None = None,
 ) -> pathlib.Path:
     """Generate HTML dashboard from *logs*; return output path."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as _plt
+
     rows = []
     for lp in logs:
         for line in lp.read_text().splitlines():
@@ -53,7 +54,7 @@ def build_dashboard(
     padding:4px}}</style></head><body>
     <h1>File-Sorter Dashboard</h1>
     <h2>Summary</h2><table>
-    {''.join(f'<tr><th>{k}</th><td>{v}</td></tr>' for k,v in summary.items())}
+    {''.join(f'<tr><th>{k}</th><td>{v}</td></tr>' for k, v in summary.items())}
     </table><h2>Files moved per day</h2>
     <img src="data:image/png;hex,{img_b64}" alt="chart">
     </body></html>
