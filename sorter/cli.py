@@ -48,9 +48,7 @@ def report(
     dirs: list[pathlib.Path] = typer.Argument(
         ..., exists=True, readable=True, file_okay=False
     ),
-    dest: pathlib.Path = typer.Option(
-        None, "--dest", file_okay=False, dir_okay=True
-    ),
+    dest: pathlib.Path = typer.Option(None, "--dest", file_okay=False, dir_okay=True),
     auto_open: bool = typer.Option(False, "--auto-open", help="open XLSX when done"),
 ) -> None:
     """Generate an Excel report describing proposed moves."""
@@ -126,7 +124,9 @@ def move(
 
 
 @app.command()
-def undo(log_file: pathlib.Path = typer.Argument(..., exists=True, readable=True)) -> None:
+def undo(
+    log_file: pathlib.Path = typer.Argument(..., exists=True, readable=True)
+) -> None:
     """Undo file moves recorded in *log_file*."""
     try:
         rollback(log_file)
@@ -143,9 +143,7 @@ def undo(log_file: pathlib.Path = typer.Argument(..., exists=True, readable=True
 def dupes(
     dirs: list[pathlib.Path] = typer.Argument(..., exists=True, readable=True),
     delete_older: bool = typer.Option(False, help="auto-delete older copies"),
-    hardlink: bool = typer.Option(
-        False, help="replace duplicates with hardlink"
-    ),
+    hardlink: bool = typer.Option(False, help="replace duplicates with hardlink"),
 ) -> None:
     """Find duplicate files by SHA-256 hash."""
     files = scan_paths(dirs)
@@ -201,4 +199,3 @@ def main() -> None:  # pragma: no cover - manual execution
 
 if __name__ == "__main__":  # pragma: no cover - manual execution
     main()
-

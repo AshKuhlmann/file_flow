@@ -9,6 +9,7 @@ def test_import_without_dsn(monkeypatch):
     if "sentry_sdk" in sys.modules:
         del sys.modules["sentry_sdk"]
     import sorter.telemetry as tel
+
     importlib.reload(tel)
 
 
@@ -22,5 +23,6 @@ def test_import_with_dsn(monkeypatch):
     monkeypatch.setenv("FILE_SORTER_SENTRY_DSN", "abc")
     monkeypatch.setitem(sys.modules, "sentry_sdk", FakeSdk())
     import sorter.telemetry as tel
+
     importlib.reload(tel)
     assert events == [("abc", 0.0)]

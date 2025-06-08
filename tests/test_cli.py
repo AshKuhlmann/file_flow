@@ -74,7 +74,9 @@ def test_scan_smoke(tmp_path):
 
 def test_move_dry_run(tmp_path, monkeypatch):
     (tmp_path / "a.txt").write_text("x")
-    monkeypatch.setattr("sorter.cli.build_report", lambda *a, **k: tmp_path / "rep.xlsx")
+    monkeypatch.setattr(
+        "sorter.cli.build_report", lambda *a, **k: tmp_path / "rep.xlsx"
+    )
     dest = tmp_path / "dest"
     runner = CliRunner()
     result = runner.invoke(app, ["move", str(tmp_path), "--dest", str(dest)])
