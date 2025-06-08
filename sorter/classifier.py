@@ -3,6 +3,8 @@ from __future__ import annotations
 import pathlib
 from typing import Any, Dict, Optional, Union
 
+from pydantic import BaseModel
+
 import json
 import logging
 import magic  # python-magic
@@ -27,8 +29,8 @@ def classify(
 ) -> Optional[str]:
     """Return category label for *path* based on provided config."""
     if isinstance(config, Settings):
-        classification_rules = {
-            k: v.model_dump() if hasattr(v, "model_dump") else v
+        classification_rules: Dict[str, Dict[str, Any]] = {
+            k: v.model_dump() if isinstance(v, BaseModel) else v
             for k, v in config.classification.items()
         }
         fallback_category = config.fallback_category
