@@ -49,8 +49,14 @@ def scan(
     try:
         files = scan_paths(dirs)
         log.info("%d files found.", len(files))
+    except PermissionError as exc:
+        log.error("Permission denied while scanning: %s", exc)
+        raise typer.Exit(1)
+    except OSError as exc:  # pragma: no cover - unexpected filesystem issue
+        log.error("Failed to scan directories: %s", exc)
+        raise typer.Exit(1)
     except Exception as exc:  # pragma: no cover - defensive
-        log.error("%s", exc)
+        log.exception("Unexpected error during scan: %s", exc)
         raise typer.Exit(1)
 
 
@@ -74,8 +80,18 @@ def report(
 
         out = build_report(mapping, auto_open=auto_open)
         log.info("Report ready: %s", out)
+    except ModuleNotFoundError as exc:
+        log.error(
+            "Missing dependency '%s'. Install optional reporting extras "
+            "to use this command.",
+            exc.name,
+        )
+        raise typer.Exit(1)
+    except PermissionError as exc:
+        log.error("Permission denied while generating report: %s", exc)
+        raise typer.Exit(1)
     except Exception as exc:  # pragma: no cover - defensive
-        log.error("%s", exc)
+        log.exception("Unexpected error during report generation: %s", exc)
         raise typer.Exit(1)
 
 
@@ -97,8 +113,11 @@ def review(
         log.info("Files to review:")
         for p in due:
             log.info("  • %s", p)
+    except PermissionError as exc:
+        log.error("Permission denied while updating review queue: %s", exc)
+        raise typer.Exit(1)
     except Exception as exc:  # pragma: no cover - defensive
-        log.error("%s", exc)
+        log.exception("Unexpected error during review operation: %s", exc)
         raise typer.Exit(1)
 
 
@@ -149,8 +168,20 @@ def move(
 
         log_path = move_with_log(mapping)
         log.info("Move complete. Log available at: %s", log_path)
+    except FileExistsError as exc:
+        log.error("Move aborted: destination already exists (%s)", exc)
+        raise typer.Exit(1)
+    except ModuleNotFoundError as exc:
+        log.error(
+            "Missing dependency '%s'. Install optional extras to enable moving.",
+            exc.name,
+        )
+        raise typer.Exit(1)
+    except PermissionError as exc:
+        log.error("Permission denied while moving files: %s", exc)
+        raise typer.Exit(1)
     except Exception as exc:  # pragma: no cover - defensive
-        log.error(f"An operation failed: {exc}", exc_info=True)
+        log.exception("Unexpected error during move: %s", exc)
         raise typer.Exit(1)
 
 
@@ -164,8 +195,17 @@ def undo(
 
         _rollback(log_file)
         log.info("Rollback complete.")
+    except FileNotFoundError as exc:
+        log.error("Log file not found: %s", exc)
+        raise typer.Exit(1)
+    except ValueError as exc:
+        log.error("Rollback failed due to integrity error: %s", exc)
+        raise typer.Exit(1)
+    except PermissionError as exc:
+        log.error("Permission denied during rollback: %s", exc)
+        raise typer.Exit(1)
     except Exception as exc:  # pragma: no cover - defensive
-        log.error("%s", exc)
+        log.exception("Unexpected error during rollback: %s", exc)
         raise typer.Exit(1)
 
 
@@ -226,8 +266,25 @@ def stats(
         raise typer.Exit(1)
     from .stats import build_dashboard
 
-    dash = build_dashboard(logs, dest=out)
-    log.info("Dashboard written to %s", dash)
+    try:
+        dash = build_dashboard(logs, dest=out)
+        log.info("Dashboard written to %s", dash)
+    except ModuleNotFoundError as exc:
+        log.error(
+            "Missing dependency '%s'. Install optional stats extras "
+            "to use this command.",
+            exc.name,
+        )
+        raise typer.Exit(1)
+    except ValueError as exc:
+        log.error("Cannot build dashboard: %s", exc)
+        raise typer.Exit(1)
+    except PermissionError as exc:
+        log.error("Permission denied while writing dashboard: %s", exc)
+        raise typer.Exit(1)
+    except Exception as exc:  # pragma: no cover - defensive
+        log.exception("Unexpected error while building dashboard: %s", exc)
+        raise typer.Exit(1)
 
 
 @app.command()
@@ -240,27 +297,41 @@ def learn_clusters(
     """Analyze a directory to discover and label potential file categories."""
     from . import clustering
 
-    files = scan_paths([source_dir])
-    clustered_df = clustering.train_cluster_model(files, n_clusters=clusters)
+    try:
+        files = scan_paths([source_dir])
+        clustered_df = clustering.train_cluster_model(files, n_clusters=clusters)
 
-    if clustered_df is None:
-        return
+        if clustered_df is None:
+            return
 
-    cluster_labels: dict[str, str] = {}
-    for cluster_id, group in clustered_df.groupby("cluster"):
-        log.info("\n--- Cluster %s ---", cluster_id)
-        sample_files = [path.name for path in group["path"].head(5)]
-        log.info("Contains files like: %s", ", ".join(sample_files))
-        category_name = typer.prompt(
-            "What would you like to name this category? (or press Enter to skip)"
+        cluster_labels: dict[str, str] = {}
+        for cluster_id, group in clustered_df.groupby("cluster"):
+            log.info("\n--- Cluster %s ---", cluster_id)
+            sample_files = [path.name for path in group["path"].head(5)]
+            log.info("Contains files like: %s", ", ".join(sample_files))
+            category_name = typer.prompt(
+                "What would you like to name this category? (or press Enter to skip)"
+            )
+            if category_name:
+                cluster_labels[str(cluster_id)] = category_name
+
+        if cluster_labels:
+            with open(clustering.LABELS_PATH, "w") as f:
+                json.dump(cluster_labels, f)
+            log.info("\nCategory labels saved to %s", clustering.LABELS_PATH)
+    except ModuleNotFoundError as exc:
+        log.error(
+            "Missing dependency '%s'. Install optional clustering extras "
+            "to use this command.",
+            exc.name,
         )
-        if category_name:
-            cluster_labels[str(cluster_id)] = category_name
-
-    if cluster_labels:
-        with open(clustering.LABELS_PATH, "w") as f:
-            json.dump(cluster_labels, f)
-        log.info("\nCategory labels saved to %s", clustering.LABELS_PATH)
+        raise typer.Exit(1)
+    except PermissionError as exc:
+        log.error("Permission denied while writing cluster labels: %s", exc)
+        raise typer.Exit(1)
+    except Exception as exc:  # pragma: no cover - defensive
+        log.exception("Unexpected error during clustering: %s", exc)
+        raise typer.Exit(1)
 
 
 @app.command()
@@ -273,7 +344,18 @@ def train(
     """Train a personalized classifier based on your move history."""
     from . import supervised
 
-    supervised.train_supervised_model(logs_dir)
+    try:
+        supervised.train_supervised_model(logs_dir)
+    except ModuleNotFoundError as exc:
+        log.error(
+            "Missing dependency '%s'. Install optional training extras "
+            "to use this command.",
+            exc.name,
+        )
+        raise typer.Exit(1)
+    except Exception as exc:  # pragma: no cover - defensive
+        log.exception("Unexpected error during training: %s", exc)
+        raise typer.Exit(1)
 
 
 def main() -> None:  # pragma: no cover - manual execution
