@@ -29,9 +29,13 @@ sys.modules.setdefault("sorter.plugins", _plugins_pkg)
 _sorter.plugins = _plugins_pkg
 
 RenamerPlugin = _load_module(
-    "sorter.plugins.base", ROOT / "sorter" / "plugins" / "base.py"
+    "sorter.plugins.base",
+    ROOT / "sorter" / "plugins" / "base.py",
 ).RenamerPlugin
-PluginManager = _load_module("sorter.plugin_manager", ROOT / "sorter" / "plugin_manager.py").PluginManager
+PluginManager = _load_module(
+    "sorter.plugin_manager",
+    ROOT / "sorter" / "plugin_manager.py",
+).PluginManager
 
 
 def test_plugin_loading_and_rename(monkeypatch):
