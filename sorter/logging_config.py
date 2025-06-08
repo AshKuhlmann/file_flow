@@ -8,6 +8,7 @@ LOG_DIR = pathlib.Path.home() / ".file-sorter"
 LOG_DIR.mkdir(exist_ok=True)
 LOG_FILE = LOG_DIR / "file_sorter.log"
 
+
 def setup_logging(console_level: int = logging.INFO, file_level: int = logging.DEBUG):
     """Configure logging for the entire application."""
     root_logger = logging.getLogger()

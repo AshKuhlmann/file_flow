@@ -186,7 +186,11 @@ def dupes(
         log.info("No duplicates detected.")
         return
     for digest, paths in groups.items():
-        log.info("Found group with hash %s containing %d files:", digest[:10], len(paths))
+        log.info(
+            "Found group with hash %s containing %d files:",
+            digest[:10],
+            len(paths),
+        )
         for p in paths:
             log.info("  • %s", p)
     if delete_older and typer.confirm("Delete older copies?"):
