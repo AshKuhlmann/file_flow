@@ -7,5 +7,9 @@ extensions = [".jpg", ".jpeg", ".png", ".gif"]
 extensions = [".mp4", ".mov", ".avi"]
 
 [plugins.exif_renamer]
-enabled = false
-pattern = "{year}{month}{day}_{hour}{minute}{second}"
+enabled = true
+pattern = "{year}-{month}-{day}_{hour}.{minute}.{second}_{model}"
+
+[plugins.id3_renamer]
+enabled = true
+pattern = "{artist} - {album} - {track_number:02d} - {title}"

@@ -113,9 +113,16 @@ def move(
             cat = classify(f, config) or "Unsorted"
             target_dir = dest / cat
 
-            new_name_from_plugin = plugin_manager.rename_with_plugin(f)
-            if new_name_from_plugin:
-                final_dest = target_dir / new_name_from_plugin
+            new_stem_from_plugin = plugin_manager.rename_with_plugin(f)
+
+            if new_stem_from_plugin:
+                temp = f.with_stem(new_stem_from_plugin)
+                final_dest = generate_name(
+                    temp,
+                    target_dir,
+                    include_parent=False,
+                    date_from_mtime=False,
+                )
             else:
                 final_dest = generate_name(f, target_dir)
 
