@@ -82,7 +82,8 @@ def report(
         log.info("Report ready: %s", out)
     except ModuleNotFoundError as exc:
         log.error(
-            "Missing dependency '%s'. Install optional reporting extras to use this command.",
+            "Missing dependency '%s'. Install optional reporting extras "
+            "to use this command.",
             exc.name,
         )
         raise typer.Exit(1)
@@ -270,7 +271,8 @@ def stats(
         log.info("Dashboard written to %s", dash)
     except ModuleNotFoundError as exc:
         log.error(
-            "Missing dependency '%s'. Install optional stats extras to use this command.",
+            "Missing dependency '%s'. Install optional stats extras "
+            "to use this command.",
             exc.name,
         )
         raise typer.Exit(1)
@@ -319,7 +321,8 @@ def learn_clusters(
             log.info("\nCategory labels saved to %s", clustering.LABELS_PATH)
     except ModuleNotFoundError as exc:
         log.error(
-            "Missing dependency '%s'. Install optional clustering extras to use this command.",
+            "Missing dependency '%s'. Install optional clustering extras "
+            "to use this command.",
             exc.name,
         )
         raise typer.Exit(1)
@@ -345,7 +348,8 @@ def train(
         supervised.train_supervised_model(logs_dir)
     except ModuleNotFoundError as exc:
         log.error(
-            "Missing dependency '%s'. Install optional training extras to use this command.",
+            "Missing dependency '%s'. Install optional training extras "
+            "to use this command.",
             exc.name,
         )
         raise typer.Exit(1)
