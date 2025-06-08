@@ -1,6 +1,6 @@
 import pathlib
 import re
-from typing import Optional
+from typing import Optional, Any
 
 from mutagen.easyid3 import EasyID3
 from mutagen.flac import FLAC
@@ -20,6 +20,7 @@ class Plugin(RenamerPlugin):
     def rename(self, source_path: pathlib.Path) -> Optional[str]:
         suffix = source_path.suffix.lower()
 
+        audio: Any
         try:
             if suffix == ".mp3":
                 audio = EasyID3(source_path)
