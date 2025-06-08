@@ -1,6 +1,7 @@
 from typer.testing import CliRunner
 
 from sorter import app
+from sorter.config import Settings
 
 
 def test_dupes_command(tmp_path, monkeypatch):
@@ -142,7 +143,7 @@ def test_move_destination_exists(tmp_path, monkeypatch):
     conflict.parent.mkdir(parents=True, exist_ok=True)
     conflict.write_text("y")
 
-    monkeypatch.setattr("sorter.cli.load_config", lambda: {})
+    monkeypatch.setattr("sorter.cli.load_config", lambda: Settings())
 
     class PM:
         def __init__(self, cfg):

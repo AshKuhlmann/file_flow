@@ -1,16 +1,44 @@
 import pathlib
 import tomllib
-from typing import Any, Dict
+from typing import Optional
+
+from pydantic import BaseModel, Field
+
 
 DEFAULT_CONFIG_PATH = pathlib.Path.home() / ".file-sorter" / "config.toml"
 
 
-def load_config(path: pathlib.Path = DEFAULT_CONFIG_PATH) -> Dict[str, Any]:
-    """Load the TOML configuration file."""
-    if not path.exists():
-        return {}
-    with path.open("rb") as fp:
-        return tomllib.load(fp)
+class ClassificationRule(BaseModel):
+    extensions: list[str] = Field(default_factory=list)
+    mimetypes: list[str] = Field(default_factory=list)
+
+
+class PluginConfig(BaseModel):
+    enabled: bool = False
+    pattern: str = ""
+
+
+class Settings(BaseModel):
+    fallback_category: Optional[str] = "Other"
+    classification: dict[str, ClassificationRule] = Field(default_factory=dict)
+    plugins: dict[str, PluginConfig] = Field(default_factory=dict)
+
+    model_config = {
+        "extra": "allow",
+    }
+
+    @classmethod
+    def load(cls, path: pathlib.Path = DEFAULT_CONFIG_PATH) -> "Settings":
+        if not path.exists():
+            return cls()
+        with path.open("rb") as fp:
+            data = tomllib.load(fp)
+        return cls.model_validate(data)
+
+
+def load_config(path: pathlib.Path = DEFAULT_CONFIG_PATH) -> Settings:
+    """Load the TOML configuration file and validate it."""
+    return Settings.load(path)
 
 
 # Default classification rules used when no config is provided

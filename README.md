@@ -29,6 +29,9 @@ The classifier now recognizes a wide range of common file types out of the box.
 Pictures, videos, documents, spreadsheets, presentations, archives, scripts and
 more are automatically sorted into matching folders.
 
+Configuration options are defined in a `config.toml` file and validated using
+Pydantic for safety and autocomplete support.
+
 
 ## Desktop GUI
 After installing, launch with:
