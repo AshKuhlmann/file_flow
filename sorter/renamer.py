@@ -11,7 +11,6 @@ except Exception:  # pragma: no cover - optional dep missing
 
     def _slugify(
         text: str,
-        *,
         entities: bool = False,
         decimal: bool = False,
         hexadecimal: bool = False,
@@ -19,10 +18,10 @@ except Exception:  # pragma: no cover - optional dep missing
         word_boundary: bool = False,
         separator: str = "-",
         save_order: bool = False,
-        stopwords: Iterable[str] | None = None,
+        stopwords: Iterable[str] = (),
         regex_pattern: Pattern[str] | str | None = None,
         lowercase: bool = True,
-        replacements: Iterable[Iterable[str]] | None = None,
+        replacements: Iterable[Iterable[str]] = (),
         allow_unicode: bool = False,
     ) -> str:
         text = re.sub(r"[\W_]+", " ", text, flags=re.UNICODE)

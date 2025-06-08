@@ -1,4 +1,7 @@
+import pytest
 from sorter import scan_paths
+
+pytest.importorskip("pytest_benchmark")
 
 
 def setup_tree(tmp_path, n=10_000):
