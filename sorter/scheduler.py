@@ -9,11 +9,54 @@ from typing import Final
 
 from croniter import croniter  # type: ignore[import-untyped]
 
+_DAY_NAMES: Final = {
+    "sun": 0,
+    "mon": 1,
+    "tue": 2,
+    "wed": 3,
+    "thu": 4,
+    "fri": 5,
+    "sat": 6,
+}
+
 
 def validate_cron(expr: str) -> None:
     """Raise `ValueError` if *expr* is not a valid 5-field cron."""
     if not croniter.is_valid(expr):
         raise ValueError(f"invalid cron expression: {expr}")
+
+
+def build_cron(*, time: str | None = None, day: str | None = None) -> str:
+    """Create a cron expression from *time* and optional weekday."""
+    if time is None:
+        hour, minute = 3, 0
+    else:
+        if ":" not in time:
+            raise ValueError(f"invalid time format: {time}")
+        h_str, m_str = time.split(":", 1)
+        if not h_str.isdigit() or not m_str.isdigit():
+            raise ValueError(f"invalid time format: {time}")
+        hour = int(h_str)
+        minute = int(m_str)
+        if hour not in range(24) or minute not in range(60):
+            raise ValueError(f"invalid time: {time}")
+
+    dow = "*"
+    if day is not None:
+        key = day.lower()[:3]
+        if key.isdigit():
+            dow_val = int(key)
+            if dow_val not in range(7):
+                raise ValueError(f"invalid day: {day}")
+            dow = str(dow_val)
+        elif key in _DAY_NAMES:
+            dow = str(_DAY_NAMES[key])
+        else:
+            raise ValueError(f"invalid day: {day}")
+
+    cron = f"{minute} {hour} * * {dow}"
+    validate_cron(cron)
+    return cron
 
 
 def install_job(
@@ -57,6 +100,38 @@ def _install_windows(cron_expr: str, cmd: str) -> None:
     hour = next_time.hour
     minute = next_time.minute
 
+    dow_field = cron_expr.split()[4]
+    days_xml = ""
+    if dow_field != "*":
+        day_tags = []
+        for part in dow_field.split(","):
+            key = part.lower()[:3]
+            if key.isdigit():
+                val = int(key)
+            elif key in _DAY_NAMES:
+                val = _DAY_NAMES[key]
+            else:
+                continue
+            tag = [
+                "Sunday",
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday",
+                "Saturday",
+            ][val]
+            day_tags.append(f"<{tag}/>")
+        if day_tags:
+            days_xml = (
+                "<ScheduleByWeek><DaysOfWeek>"
+                + "".join(day_tags)
+                + "</DaysOfWeek><WeeksInterval>1</WeeksInterval></ScheduleByWeek>"
+            )
+
+    if not days_xml:
+        days_xml = "<ScheduleByDay><DaysInterval>1</DaysInterval></ScheduleByDay>"
+
     task_xml = textwrap.dedent(
         f"""
         <Task version='1.2'
@@ -64,9 +139,7 @@ def _install_windows(cron_expr: str, cmd: str) -> None:
           <Triggers>
             <CalendarTrigger>
               <StartBoundary>2024-01-01T{hour:02d}:{minute:02d}:00</StartBoundary>
-              <ScheduleByDay>
-                <DaysInterval>1</DaysInterval>
-              </ScheduleByDay>
+              {days_xml}
             </CalendarTrigger>
           </Triggers>
           <Actions Context='Author'>
