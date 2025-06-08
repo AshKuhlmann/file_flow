@@ -1,5 +1,5 @@
 import pytest
-
+from sorter import scheduler
 from sorter.scheduler import validate_cron
 
 
@@ -12,9 +12,6 @@ def test_valid_cron(expr):
 def test_invalid_cron(expr):
     with pytest.raises(ValueError):
         validate_cron(expr)
-
-
-from sorter import scheduler
 
 
 def test_install_job_linux(monkeypatch, tmp_path):

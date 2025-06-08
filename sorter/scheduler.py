@@ -59,7 +59,8 @@ def _install_windows(cron_expr: str, cmd: str) -> None:
 
     task_xml = textwrap.dedent(
         f"""
-        <Task version='1.2' xmlns='http://schemas.microsoft.com/windows/2004/02/mit/task'>
+        <Task version='1.2'
+              xmlns='http://schemas.microsoft.com/windows/2004/02/mit/task'>
           <Triggers>
             <CalendarTrigger>
               <StartBoundary>2024-01-01T{hour:02d}:{minute:02d}:00</StartBoundary>

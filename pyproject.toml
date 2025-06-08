@@ -38,6 +38,15 @@ build-backend = "poetry.core.masonry.api"
 [tool.pytest.ini_options]
 python_files = ["test_*.py", "benchmark_*.py"]
 
+[tool.flake8]
+max-line-length = 88
+extend-ignore = ["E203", "W503"]
+
+[tool.mypy]
+python_version = "3.10"
+files = ["sorter", "tests"]
+ignore_missing_imports = true
+
 [tool.poetry.scripts]
 file-sorter-gui = "sorter_gui.app:main"
 file-sorter = "sorter.cli:app"
