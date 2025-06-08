@@ -1,6 +1,14 @@
 import pytest
-from sorter import scheduler
-from sorter.scheduler import validate_cron
+import importlib.util
+from pathlib import Path
+
+spec = importlib.util.spec_from_file_location(
+    "scheduler", Path(__file__).resolve().parents[1] / "sorter" / "scheduler.py"
+)
+scheduler = importlib.util.module_from_spec(spec)
+assert spec.loader is not None
+spec.loader.exec_module(scheduler)
+validate_cron = scheduler.validate_cron
 
 
 @pytest.mark.parametrize("expr", ["0 0 * * *", "15 4 * * 1-5"])
@@ -60,3 +68,24 @@ def test_install_cron(monkeypatch):
     scheduler._install_cron("0 3 * * *", "cmd")
     assert recorded["args"] == ["crontab", "-"]
     assert "cmd && file-sorter report --auto-open" in recorded["input"]
+
+
+def test_install_windows(monkeypatch, tmp_path):
+    captured = {}
+
+    def fake_run(args, *, check=False):
+        captured["args"] = args
+        return type("R", (), {})()
+
+    monkeypatch.setattr(scheduler.subprocess, "run", fake_run)
+    monkeypatch.setenv("TEMP", str(tmp_path))
+
+    scheduler._install_windows("0 0 * * *", "cmd")
+
+    xml_file = tmp_path / "Task.xml"
+    assert xml_file.exists()
+    content = xml_file.read_text()
+    assert "<Command>cmd</Command>" in content
+    assert "<StartBoundary>2024-01-01T00:00:00</StartBoundary>" in content
+    assert "/XML" in captured["args"]
+    assert str(xml_file) in captured["args"]
