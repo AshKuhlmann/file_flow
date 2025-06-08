@@ -22,7 +22,8 @@ def handle_cli_errors(func):
             typer.echo(msg)
         except ModuleNotFoundError as exc:
             msg = (
-                f"Missing dependency '{exc.name}'. Install optional extras to use this command."
+                f"Missing dependency '{exc.name}'. Install optional extras "
+                "to use this command."
             )
             log.error(msg)
             typer.echo(msg)
@@ -41,5 +42,6 @@ def handle_cli_errors(func):
         raise typer.Exit(1)
 
     return wrapper
+
 
 __all__ = ["handle_cli_errors"]
