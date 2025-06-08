@@ -93,6 +93,7 @@ def report(
         ..., exists=True, readable=True, file_okay=False
     ),
     dest: pathlib.Path = typer.Option(None, "--dest", file_okay=False, dir_okay=True),
+    pattern: str | None = typer.Option(None, "--pattern", help="rename pattern"),
     auto_open: bool = typer.Option(False, "--auto-open", help="open XLSX when done"),
 ) -> None:
     """Generate an Excel report describing proposed moves."""
@@ -105,7 +106,7 @@ def report(
         for f in files:
             cat = classify_file(f) or "Unsorted"
             target_dir = base / cat
-            new_path = generate_name(f, target_dir)
+            new_path = generate_name(f, target_dir, pattern=pattern)
             mapping.append((f, new_path))
             log.debug("map %s -> %s", f, new_path)
 
@@ -160,6 +161,7 @@ def move(
         ..., exists=True, readable=True, file_okay=False
     ),
     dest: pathlib.Path = typer.Option(..., "--dest", file_okay=False, dir_okay=True),
+    pattern: str | None = typer.Option(None, "--pattern", help="rename pattern"),
     yes: bool = typer.Option(False, "--yes", help="skip confirmation"),
     dry_run: bool = typer.Option(True, "--dry-run/--no-dry-run"),
 ) -> None:
@@ -184,9 +186,10 @@ def move(
                     target_dir,
                     include_parent=False,
                     date_from_mtime=False,
+                    pattern=pattern,
                 )
             else:
-                final_dest = generate_name(f, target_dir)
+                final_dest = generate_name(f, target_dir, pattern=pattern)
 
             mapping.append((f, final_dest))
             log.debug("plan move %s -> %s", f, final_dest)

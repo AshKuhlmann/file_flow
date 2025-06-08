@@ -13,6 +13,14 @@ File-Sorter reads rules from `default_rules.toml`. Copy it and modify as needed.
 file-sorter move ~/Downloads --dest ~/Sorted --dry-run
 ```
 
+### Custom naming patterns
+You can customize how files are renamed using the ``--pattern`` option. The
+pattern can contain ``{parent}``, ``{date}``, ``{stem}`` and ``{ext}`` tokens.
+For example:
+```bash
+file-sorter move ~/Downloads --dest ~/Sorted --pattern "{date}-{stem}{ext}"
+```
+
 ## Analytics
 After moving files you can generate a dashboard:
 ```bash

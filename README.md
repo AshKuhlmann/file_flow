@@ -18,6 +18,13 @@ pip install file-sorter
 file-sorter move ~/Downloads --dest ~/Sorted --dry-run
 ```
 
+### Custom naming patterns
+Use the ``--pattern`` option to change how files are renamed. Supported tokens
+include ``{parent}``, ``{date}``, ``{stem}`` and ``{ext}``.
+```bash
+file-sorter move ~/Downloads --dest ~/Sorted --pattern "{date}-{stem}{ext}"
+```
+
 The classifier now recognizes a wide range of common file types out of the box.
 Pictures, videos, documents, spreadsheets, presentations, archives, scripts and
 more are automatically sorted into matching folders.

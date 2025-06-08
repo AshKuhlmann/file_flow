@@ -38,3 +38,11 @@ def test_case_insensitive_collision(tmp_path):
     (dest / "upper.txt").write_text("lowercase duplicate")
     result = generate_name(src, dest)
     assert result.name != "upper.txt" and result.name.lower() != "upper.txt"
+
+
+def test_custom_pattern(tmp_path):
+    src = _touch(tmp_path / "pics", "Holiday Photo.JPG", mtime=946684800)
+    dest = tmp_path / "out"
+    pat = "{date}-{stem}{ext}"
+    new_path = generate_name(src, dest, pattern=pat)
+    assert new_path.name.startswith("2000-01-01-holiday-photo")
