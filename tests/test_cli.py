@@ -117,7 +117,7 @@ def test_move_custom_pattern(tmp_path, monkeypatch):
         captured["pattern"] = kwargs.get("pattern")
         return tmp_path / "dest" / "a.txt"
 
-    monkeypatch.setattr("sorter.cli.generate_name", fake_gen)
+    monkeypatch.setattr("sorter.planner.generate_name", fake_gen)
     dest = tmp_path / "dest"
     runner = CliRunner()
     result = runner.invoke(
@@ -143,7 +143,7 @@ def test_move_destination_exists(tmp_path, monkeypatch):
     conflict.parent.mkdir(parents=True, exist_ok=True)
     conflict.write_text("y")
 
-    monkeypatch.setattr("sorter.cli.load_config", lambda: Settings())
+    monkeypatch.setattr("sorter.planner.load_config", lambda: Settings())
 
     class PM:
         def __init__(self, cfg):
@@ -152,9 +152,9 @@ def test_move_destination_exists(tmp_path, monkeypatch):
         def rename_with_plugin(self, path):
             return None
 
-    monkeypatch.setattr("sorter.cli.PluginManager", PM)
-    monkeypatch.setattr("sorter.cli.classify_file", lambda p: None)
-    monkeypatch.setattr("sorter.cli.generate_name", lambda *a, **k: conflict)
+    monkeypatch.setattr("sorter.planner.PluginManager", PM)
+    monkeypatch.setattr("sorter.planner.classify_file", lambda p: None)
+    monkeypatch.setattr("sorter.planner.generate_name", lambda *a, **k: conflict)
     monkeypatch.setattr(
         "sorter.cli.build_report", lambda *a, **k: tmp_path / "rep.xlsx"
     )
@@ -179,10 +179,10 @@ def test_report_format_option(tmp_path, monkeypatch):
     src = tmp_path / "a.txt"
     src.write_text("x")
 
-    monkeypatch.setattr("sorter.cli.scan_paths", lambda dirs: [src])
-    monkeypatch.setattr("sorter.cli.classify_file", lambda p: None)
+    monkeypatch.setattr("sorter.planner.scan_paths", lambda dirs: [src])
+    monkeypatch.setattr("sorter.planner.classify_file", lambda p: None)
     monkeypatch.setattr(
-        "sorter.cli.generate_name", lambda *a, **k: tmp_path / "dest" / "a.txt"
+        "sorter.planner.generate_name", lambda *a, **k: tmp_path / "dest" / "a.txt"
     )
 
     captured = {}

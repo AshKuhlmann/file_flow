@@ -22,14 +22,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from sorter import (
-    build_report,
-    classify,
-    generate_name,
-    move_with_log,
-    rollback,
-    scan_paths,
-)
+from sorter import build_report, move_with_log, rollback, plan_moves
 
 
 class WorkerSignals(QObject):  # type: ignore[misc]
@@ -57,14 +50,7 @@ class Worker(QRunnable):  # type: ignore[misc]
 def _build_mapping(
     paths: Iterable[pathlib.Path], dest_root: pathlib.Path
 ) -> list[tuple[pathlib.Path, pathlib.Path]]:
-    files = scan_paths(list(paths))
-    mapping: list[tuple[pathlib.Path, pathlib.Path]] = []
-    for f in files:
-        category = classify(f) or "Other"
-        target_dir = dest_root / category
-        dst = generate_name(f, target_dir)
-        mapping.append((f, dst))
-    return mapping
+    return plan_moves(list(paths), dest_root)
 
 
 class MainWindow(QMainWindow):  # type: ignore[misc]
