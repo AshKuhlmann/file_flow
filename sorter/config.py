@@ -35,6 +35,7 @@ class Settings(BaseModel):
             data = tomllib.load(fp)
         return cls.model_validate(data)
 
+
 def load_config(path: pathlib.Path = DEFAULT_CONFIG_PATH) -> Settings:
     """Load the TOML configuration file and validate it."""
     return Settings.load(path)

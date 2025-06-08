@@ -21,7 +21,10 @@ from .config import load_config, Settings
 log = logging.getLogger(__name__)
 
 
-def classify(path: pathlib.Path, config: Union[Dict[str, Any], Settings]) -> Optional[str]:
+def classify(
+    path: pathlib.Path,
+    config: Union[Dict[str, Any], Settings],
+) -> Optional[str]:
     """Return category label for *path* based on provided config."""
     if isinstance(config, Settings):
         classification_rules = {
