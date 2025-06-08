@@ -21,6 +21,16 @@ def test_duplicate_detection(tmp_path):
     assert set(only) == {a, b}
 
 
+def test_duplicate_detection_md5(tmp_path):
+    a = _make(tmp_path, "a.txt", b"same")
+    b = _make(tmp_path, "b.txt", b"same")
+
+    groups = find_duplicates([a, b], algorithm="md5")
+    assert len(groups) == 1
+    only = next(iter(groups.values()))
+    assert set(only) == {a, b}
+
+
 def test_delete_older(tmp_path):
     a = _make(tmp_path, "old.txt", b"x")
     b = _make(tmp_path, "new.txt", b"x")

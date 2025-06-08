@@ -14,13 +14,33 @@ def test_dupes_command(tmp_path, monkeypatch):
 
     monkeypatch.setattr("sorter.cli.scan_paths", fake_scan)
     monkeypatch.setattr(
-        "sorter.cli.find_duplicates", lambda files: {"deadbeef": [a, b]}
+        "sorter.cli.find_duplicates",
+        lambda files, *, algorithm="sha256": {"deadbeef": [a, b]},
     )
 
     runner = CliRunner()
     result = runner.invoke(app, ["dupes", str(tmp_path)])
     assert result.exit_code == 0
     assert "deadbeef"[:8] in result.stdout
+
+
+def test_dupes_algorithm_option(tmp_path, monkeypatch):
+    calls = {}
+
+    def fake_scan(dirs):
+        return []
+
+    def fake_find(files, *, algorithm="sha256", validate_full=True):
+        calls["alg"] = algorithm
+        return {}
+
+    monkeypatch.setattr("sorter.cli.scan_paths", fake_scan)
+    monkeypatch.setattr("sorter.cli.find_duplicates", fake_find)
+
+    runner = CliRunner()
+    result = runner.invoke(app, ["dupes", str(tmp_path), "--algorithm", "md5"])
+    assert result.exit_code == 0
+    assert calls["alg"] == "md5"
 
 
 def test_schedule_command(tmp_path, monkeypatch):

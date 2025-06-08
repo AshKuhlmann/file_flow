@@ -258,12 +258,17 @@ def dupes(
     dirs: list[pathlib.Path] = typer.Argument(..., exists=True, readable=True),
     delete_older: bool = typer.Option(False, help="auto-delete older copies"),
     hardlink: bool = typer.Option(False, help="replace duplicates with hardlink"),
+    algorithm: str = typer.Option("sha256", "--algorithm", help="hash algorithm"),
 ) -> None:
-    """Find duplicate files by SHA-256 hash."""
+    """Find duplicate files using *algorithm* hash."""
     log.debug("Scanning for duplicates in %d dirs", len(dirs))
     files = scan_paths(dirs)
-    log.info("Scanning %d files for duplicates", len(files))
-    groups = find_duplicates(files)
+    log.info(
+        "Scanning %d files for duplicates using %s",
+        len(files),
+        algorithm,
+    )
+    groups = find_duplicates(files, algorithm=algorithm)
     if not groups:
         log.info("No duplicates detected.")
         return
