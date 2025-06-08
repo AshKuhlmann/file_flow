@@ -21,13 +21,18 @@ class Plugin(RenamerPlugin):
             return None
 
         with source_path.open("rb") as f:
-            tags = exifread.process_file(f, details=False, stop_tag="EXIF DateTimeOriginal")
+            tags = exifread.process_file(
+                f, details=False, stop_tag="EXIF DateTimeOriginal"
+            )
 
             if "EXIF DateTimeOriginal" not in tags:
                 return None
 
             dt_str = str(tags["EXIF DateTimeOriginal"])
-            dt_parts = re.match(r"(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})", dt_str)
+            dt_parts = re.match(
+                r"(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})",
+                dt_str,
+            )
             if not dt_parts:
                 return None
 

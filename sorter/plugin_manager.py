@@ -21,7 +21,8 @@ class PluginManager:
                 if hasattr(module, "Plugin"):
                     plugin_config = self.plugin_config.get(name, {})
                     plugin_instance = module.Plugin(plugin_config)
-                    if isinstance(plugin_instance, RenamerPlugin) and plugin_instance.enabled:
+                    is_renamer = isinstance(plugin_instance, RenamerPlugin)
+                    if is_renamer and plugin_instance.enabled:
                         loaded.append(plugin_instance)
         return loaded
 
