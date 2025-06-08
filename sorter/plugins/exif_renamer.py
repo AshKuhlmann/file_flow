@@ -5,11 +5,7 @@ from typing import Dict, Any, Optional
 import exifread
 
 from .base import RenamerPlugin
-
-
-def sanitize_filename(name: str) -> str:
-    """Remove characters that are invalid for file names."""
-    return re.sub(r'[\\/*?:"<>|]', "", name)
+from ..utils import sanitize_filename
 
 
 class Plugin(RenamerPlugin):

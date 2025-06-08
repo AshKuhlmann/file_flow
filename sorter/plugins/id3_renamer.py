@@ -1,5 +1,4 @@
 import pathlib
-import re
 from typing import Optional, Any
 
 from mutagen.easyid3 import EasyID3
@@ -7,11 +6,7 @@ from mutagen.flac import FLAC
 from mutagen.mp4 import MP4
 
 from .base import RenamerPlugin
-
-
-def sanitize_filename(name: str) -> str:
-    """Remove characters that are invalid for file names."""
-    return re.sub(r'[\\/*?:"<>|]', "", name)
+from ..utils import sanitize_filename
 
 
 class Plugin(RenamerPlugin):
