@@ -9,13 +9,10 @@ from . import __version__
 
 from .logging_config import setup_logging
 from .scanner import scan_paths
-from .classifier import classify_file
-from .config import load_config
-from .plugin_manager import PluginManager
 from .reporter import build_report
 from .review import ReviewQueue
-from .renamer import generate_name
 from .mover import move_with_log
+from .planner import plan_moves
 from .dupes import find_duplicates, delete_older as _delete_older
 
 
@@ -100,16 +97,11 @@ def report(
     """Generate a report describing proposed moves."""
     try:
         log.debug("Generating report from %d source dirs", len(dirs))
-        files = scan_paths(dirs)
-        log.info("%d files will be included in the report", len(files))
-        mapping: list[tuple[pathlib.Path, pathlib.Path]] = []
         base = dest or pathlib.Path.cwd()
-        for f in files:
-            cat = classify_file(f) or "Unsorted"
-            target_dir = base / cat
-            new_path = generate_name(f, target_dir, pattern=pattern)
-            mapping.append((f, new_path))
-            log.debug("map %s -> %s", f, new_path)
+        mapping = plan_moves(dirs, base, pattern=pattern)
+        log.info("%d files will be included in the report", len(mapping))
+        for src, dst in mapping:
+            log.debug("map %s -> %s", src, dst)
 
         out = build_report(mapping, auto_open=auto_open, fmt=fmt)
         log.info("Report ready: %s", out)
@@ -169,31 +161,10 @@ def move(
     """Scan, classify and move files into *dest*."""
     try:
         log.debug("Beginning move operation into %s", dest)
-        config = load_config()
-        plugin_manager = PluginManager(config)
-        files = scan_paths(dirs)
-        log.info("%d files to process", len(files))
-        mapping: list[tuple[pathlib.Path, pathlib.Path]] = []
-        for f in files:
-            cat = classify_file(f) or "Unsorted"
-            target_dir = dest / cat
-
-            new_stem_from_plugin = plugin_manager.rename_with_plugin(f)
-            if new_stem_from_plugin:
-                log.debug("plugin renamed %s -> %s", f.name, new_stem_from_plugin)
-                temp_path_for_collision_check = f.with_stem(new_stem_from_plugin)
-                final_dest = generate_name(
-                    temp_path_for_collision_check,
-                    target_dir,
-                    include_parent=False,
-                    date_from_mtime=False,
-                    pattern=pattern,
-                )
-            else:
-                final_dest = generate_name(f, target_dir, pattern=pattern)
-
-            mapping.append((f, final_dest))
-            log.debug("plan move %s -> %s", f, final_dest)
+        mapping = plan_moves(dirs, dest, pattern=pattern)
+        log.info("%d files to process", len(mapping))
+        for src, dst in mapping:
+            log.debug("plan move %s -> %s", src, dst)
 
         report_path = build_report(mapping, auto_open=False)
         log.info("Report ready: %s", report_path)
