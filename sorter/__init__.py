@@ -9,6 +9,8 @@ needed objects on first access.
 from importlib import import_module
 from typing import Any, Dict, Tuple
 
+__version__ = "1.0.0"
+
 _EXPORTS: Dict[str, Tuple[str, str]] = {
     "scan_paths": ("scanner", "scan_paths"),
     "find_duplicates": ("dupes", "find_duplicates"),
@@ -52,4 +54,5 @@ __all__ = [
     "rollback",
     "build_dashboard",
     "app",
+    "__version__",
 ]
