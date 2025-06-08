@@ -82,3 +82,51 @@ def test_move_dry_run(tmp_path, monkeypatch):
     result = runner.invoke(app, ["move", str(tmp_path), "--dest", str(dest)])
     assert result.exit_code == 0
     assert "Dry-run" in result.stdout
+
+
+def test_stats_no_logs(tmp_path):
+    runner = CliRunner()
+    result = runner.invoke(app, ["stats", str(tmp_path)])
+    assert result.exit_code == 1
+    assert "No log files found." in result.stdout
+
+
+def test_move_destination_exists(tmp_path, monkeypatch):
+    src = tmp_path / "a.txt"
+    src.write_text("x")
+
+    dest_root = tmp_path / "dest"
+    conflict = dest_root / "Unsorted" / "a.txt"
+    conflict.parent.mkdir(parents=True, exist_ok=True)
+    conflict.write_text("y")
+
+    monkeypatch.setattr("sorter.cli.load_config", lambda: {})
+
+    class PM:
+        def __init__(self, cfg):
+            pass
+
+        def rename_with_plugin(self, path):
+            return None
+
+    monkeypatch.setattr("sorter.cli.PluginManager", PM)
+    monkeypatch.setattr("sorter.cli.classify_file", lambda p: None)
+    monkeypatch.setattr("sorter.cli.generate_name", lambda *a, **k: conflict)
+    monkeypatch.setattr(
+        "sorter.cli.build_report", lambda *a, **k: tmp_path / "rep.xlsx"
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        app,
+        [
+            "move",
+            str(tmp_path),
+            "--dest",
+            str(dest_root),
+            "--no-dry-run",
+            "--yes",
+        ],
+    )
+    assert result.exit_code == 1
+    assert "destination already exists" in result.stdout
