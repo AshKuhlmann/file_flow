@@ -18,6 +18,10 @@ pip install file-sorter
 file-sorter move ~/Downloads --dest ~/Sorted --dry-run
 ```
 
+The classifier now recognizes a wide range of common file types out of the box.
+Pictures, videos, documents, spreadsheets, presentations, archives, scripts and
+more are automatically sorted into matching folders.
+
 
 ## Desktop GUI
 After installing, launch with:
