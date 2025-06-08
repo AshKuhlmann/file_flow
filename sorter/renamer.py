@@ -2,16 +2,33 @@ from __future__ import annotations
 
 import datetime as _dt
 import pathlib
-from typing import Final
+from typing import Final, Iterable, Pattern
 
 try:
     from slugify import slugify as _slugify  # type: ignore
 except Exception:  # pragma: no cover - optional dep missing
     import re
 
-    def _slugify(text: str) -> str:
-        text = re.sub(r"[^\w-]+", "_", text)
-        return re.sub(r"_+", "_", text).strip("_").lower()
+    def _slugify(
+        text: str,
+        *,
+        entities: bool = False,
+        decimal: bool = False,
+        hexadecimal: bool = False,
+        max_length: int = 0,
+        word_boundary: bool = False,
+        separator: str = "-",
+        save_order: bool = False,
+        stopwords: Iterable[str] | None = None,
+        regex_pattern: Pattern[str] | str | None = None,
+        lowercase: bool = True,
+        replacements: Iterable[Iterable[str]] | None = None,
+        allow_unicode: bool = False,
+    ) -> str:
+        text = re.sub(r"[\W_]+", " ", text, flags=re.UNICODE)
+        text = text.strip().lower()
+        text = re.sub(r"\s+", separator, text)
+        return text
 
 _DATE_FMT: Final = "%Y-%m-%d"
 

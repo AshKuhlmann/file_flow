@@ -16,14 +16,17 @@ class PluginManager:
         """Dynamically loads all plugins that inherit from RenamerPlugin."""
         loaded: List[RenamerPlugin] = []
         for finder, name, ispkg in pkgutil.iter_modules(sorter.plugins.__path__):
-            if name != "base":
+            if name == "base":
+                continue
+            try:
                 module = importlib.import_module(f"sorter.plugins.{name}")
-                if hasattr(module, "Plugin"):
-                    plugin_config = self.plugin_config.get(name, {})
-                    plugin_instance = module.Plugin(plugin_config)
-                    is_renamer = isinstance(plugin_instance, RenamerPlugin)
-                    if is_renamer and plugin_instance.enabled:
-                        loaded.append(plugin_instance)
+            except Exception:  # pragma: no cover - optional plugin deps missing
+                continue
+            if hasattr(module, "Plugin"):
+                plugin_config = self.plugin_config.get(name, {})
+                plugin_instance = module.Plugin(plugin_config)
+                if isinstance(plugin_instance, RenamerPlugin) and plugin_instance.enabled:
+                    loaded.append(plugin_instance)
         return loaded
 
     def rename_with_plugin(self, source_path: pathlib.Path) -> Optional[str]:

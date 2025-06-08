@@ -16,8 +16,6 @@ from .review import ReviewQueue
 from .renamer import generate_name
 from .mover import move_with_log
 from .dupes import find_duplicates, delete_older as _delete_older
-from . import clustering
-from . import supervised
 
 
 app = typer.Typer(
@@ -240,6 +238,8 @@ def learn_clusters(
     ),
 ) -> None:
     """Analyze a directory to discover and label potential file categories."""
+    from . import clustering
+
     files = scan_paths([source_dir])
     clustered_df = clustering.train_cluster_model(files, n_clusters=clusters)
 
@@ -271,6 +271,8 @@ def train(
     )
 ) -> None:
     """Train a personalized classifier based on your move history."""
+    from . import supervised
+
     supervised.train_supervised_model(logs_dir)
 
 
