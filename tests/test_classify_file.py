@@ -7,7 +7,7 @@ def test_supervised_prediction(tmp_path, monkeypatch):
     f.write_text("x")
 
     monkeypatch.setattr("sorter.supervised.predict_category", lambda p: "Docs")
-    monkeypatch.setattr("sorter.config.load_config", lambda: {})
+    monkeypatch.setattr("sorter.classifier.load_config", lambda: {})
 
     assert classify_file(f) == "Docs"
 
@@ -18,7 +18,7 @@ def test_rule_based(tmp_path, monkeypatch):
 
     monkeypatch.setattr("sorter.supervised.predict_category", lambda p: None)
     monkeypatch.setattr(
-        "sorter.config.load_config",
+        "sorter.classifier.load_config",
         lambda: {"classification": {"Pictures": {"extensions": [".jpg"]}}},
     )
 
@@ -35,7 +35,9 @@ def test_cluster_label(tmp_path, monkeypatch):
     labels_path.write_text(json.dumps({"1": "Music"}))
 
     monkeypatch.setattr("sorter.supervised.predict_category", lambda p: None)
-    monkeypatch.setattr("sorter.config.load_config", lambda: {"fallback_category": None})
+    monkeypatch.setattr(
+        "sorter.classifier.load_config", lambda: {"fallback_category": None}
+    )
     monkeypatch.setattr("sorter.classifier.classify", lambda p, c: None)
     monkeypatch.setattr("sorter.clustering.MODEL_PATH", model_path)
     monkeypatch.setattr("sorter.clustering.LABELS_PATH", labels_path)
@@ -49,7 +51,9 @@ def test_unsorted(tmp_path, monkeypatch):
     f.write_bytes(b"x")
 
     monkeypatch.setattr("sorter.supervised.predict_category", lambda p: None)
-    monkeypatch.setattr("sorter.config.load_config", lambda: {"fallback_category": None})
+    monkeypatch.setattr(
+        "sorter.classifier.load_config", lambda: {"fallback_category": None}
+    )
     monkeypatch.setattr("sorter.classifier.classify", lambda p, c: None)
     monkeypatch.setattr("sorter.clustering.MODEL_PATH", tmp_path / "no_model")
     monkeypatch.setattr("sorter.clustering.LABELS_PATH", tmp_path / "no_labels")
