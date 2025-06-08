@@ -6,7 +6,8 @@ pip install file-flow
 ```
 
 ## Configuration
-File-Sorter reads rules from `default_rules.toml`. Copy it and modify as needed.
+File-Sorter reads settings from `config.toml` and validates them using
+Pydantic. Copy the example file and modify as needed.
 
 ## Example Usage
 ```bash

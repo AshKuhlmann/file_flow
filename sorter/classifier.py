@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import pathlib
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 import json
 import logging
@@ -16,15 +16,22 @@ try:
     from . import clustering  # type: ignore
 except Exception:  # pragma: no cover - optional dep missing
     clustering = None  # type: ignore
-from .config import load_config
+from .config import load_config, Settings
 
 log = logging.getLogger(__name__)
 
 
-def classify(path: pathlib.Path, config: Dict[str, Any]) -> Optional[str]:
+def classify(path: pathlib.Path, config: Union[Dict[str, Any], Settings]) -> Optional[str]:
     """Return category label for *path* based on provided config."""
-    classification_rules = config.get("classification", {})
-    fallback_category = config.get("fallback_category", "Other")
+    if isinstance(config, Settings):
+        classification_rules = {
+            k: v.model_dump() if hasattr(v, "model_dump") else v
+            for k, v in config.classification.items()
+        }
+        fallback_category = config.fallback_category
+    else:
+        classification_rules = config.get("classification", {})
+        fallback_category = config.get("fallback_category", "Other")
 
     for category, rules in classification_rules.items():
         if path.suffix.lower() in rules.get("extensions", []):

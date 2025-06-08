@@ -1,5 +1,6 @@
 import json
 from sorter.classifier import classify_file
+from sorter.config import Settings
 
 
 def test_supervised_prediction(tmp_path, monkeypatch):
@@ -7,7 +8,7 @@ def test_supervised_prediction(tmp_path, monkeypatch):
     f.write_text("x")
 
     monkeypatch.setattr("sorter.supervised.predict_category", lambda p: "Docs")
-    monkeypatch.setattr("sorter.classifier.load_config", lambda: {})
+    monkeypatch.setattr("sorter.classifier.load_config", lambda: Settings())
 
     assert classify_file(f) == "Docs"
 
@@ -19,7 +20,9 @@ def test_rule_based(tmp_path, monkeypatch):
     monkeypatch.setattr("sorter.supervised.predict_category", lambda p: None)
     monkeypatch.setattr(
         "sorter.classifier.load_config",
-        lambda: {"classification": {"Pictures": {"extensions": [".jpg"]}}},
+        lambda: Settings(
+            classification={"Pictures": {"extensions": [".jpg"]}}
+        ),
     )
 
     assert classify_file(f) == "Pictures"
@@ -36,7 +39,7 @@ def test_cluster_label(tmp_path, monkeypatch):
 
     monkeypatch.setattr("sorter.supervised.predict_category", lambda p: None)
     monkeypatch.setattr(
-        "sorter.classifier.load_config", lambda: {"fallback_category": None}
+        "sorter.classifier.load_config", lambda: Settings(fallback_category=None)
     )
     monkeypatch.setattr("sorter.classifier.classify", lambda p, c: None)
     monkeypatch.setattr("sorter.clustering.MODEL_PATH", model_path)
@@ -52,7 +55,7 @@ def test_unsorted(tmp_path, monkeypatch):
 
     monkeypatch.setattr("sorter.supervised.predict_category", lambda p: None)
     monkeypatch.setattr(
-        "sorter.classifier.load_config", lambda: {"fallback_category": None}
+        "sorter.classifier.load_config", lambda: Settings(fallback_category=None)
     )
     monkeypatch.setattr("sorter.classifier.classify", lambda p, c: None)
     monkeypatch.setattr("sorter.clustering.MODEL_PATH", tmp_path / "no_model")

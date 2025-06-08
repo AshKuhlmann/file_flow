@@ -1,15 +1,22 @@
 import importlib
 import pkgutil
 import pathlib
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Union
 
 import sorter.plugins
 from sorter.plugins.base import RenamerPlugin
+from .config import Settings
 
 
 class PluginManager:
-    def __init__(self, config: Dict[str, Any]):
-        self.plugin_config = config.get("plugins", {})
+    def __init__(self, config: Union[Dict[str, Any], Settings]):
+        if isinstance(config, Settings):
+            self.plugin_config = {
+                name: cfg.model_dump() if hasattr(cfg, "model_dump") else cfg
+                for name, cfg in config.plugins.items()
+            }
+        else:
+            self.plugin_config = config.get("plugins", {})
         self.renamer_plugins: List[RenamerPlugin] = self._load_plugins()
 
     def _load_plugins(self) -> List[RenamerPlugin]:
