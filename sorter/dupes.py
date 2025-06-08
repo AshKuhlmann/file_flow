@@ -6,7 +6,7 @@ import pathlib
 from collections import defaultdict
 from typing import Iterable, Sequence, Dict, List
 
-_BUF = 1 << 20  # 1 MiB
+from .utils import sha256sum
 
 
 def _quick_hash(path: pathlib.Path, /, sample: int = 64 * 1024) -> str:
@@ -22,11 +22,7 @@ def _quick_hash(path: pathlib.Path, /, sample: int = 64 * 1024) -> str:
 
 
 def _full_hash(path: pathlib.Path) -> str:
-    h = hashlib.sha256()
-    with path.open("rb") as fp:
-        while chunk := fp.read(_BUF):
-            h.update(chunk)
-    return h.hexdigest()
+    return sha256sum(path)
 
 
 def find_duplicates(
