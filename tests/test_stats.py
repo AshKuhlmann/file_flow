@@ -1,6 +1,7 @@
 import pathlib
 import json
 import time
+import pytest
 
 from sorter.stats import build_dashboard
 
@@ -22,3 +23,10 @@ def test_dashboard(tmp_path: pathlib.Path) -> None:
     log = _make_log(tmp_path)
     html = build_dashboard([log])
     assert html.exists() and "<html" in html.read_text()
+
+
+def test_empty_dashboard(tmp_path: pathlib.Path) -> None:
+    empty_log = tmp_path / "empty.jsonl"
+    empty_log.write_text("")
+    with pytest.raises(ValueError):
+        build_dashboard([empty_log])
