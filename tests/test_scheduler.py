@@ -5,6 +5,7 @@ from pathlib import Path
 spec = importlib.util.spec_from_file_location(
     "scheduler", Path(__file__).resolve().parents[1] / "sorter" / "scheduler.py"
 )
+assert spec is not None
 scheduler = importlib.util.module_from_spec(spec)
 assert spec.loader is not None
 spec.loader.exec_module(scheduler)
