@@ -24,7 +24,6 @@ def sha256sum(path: pathlib.Path, *, buf_size: int = BUF_SIZE) -> str:
     return hash_file(path, algorithm="sha256", buf_size=buf_size)
 
 
-
 def sanitize_filename(name: str) -> str:
     """Remove characters that are invalid for file names."""
     return re.sub(r'[\\/*?:"<>|]', "", name)

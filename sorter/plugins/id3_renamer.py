@@ -1,5 +1,4 @@
 import pathlib
-import re
 from typing import Optional, Any
 
 from mutagen.easyid3 import EasyID3
