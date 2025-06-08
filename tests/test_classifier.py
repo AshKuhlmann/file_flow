@@ -27,3 +27,24 @@ def test_magic_fallback(monkeypatch, tmp_path):
     monkeypatch.setattr("magic.from_file", fake_from_file)
     cfg = {"classification": DEFAULT_RULES}
     assert classify(f, cfg) == "Audio"
+
+
+def test_document_category(tmp_path):
+    f = tmp_path / "report.pdf"
+    f.write_bytes(b"dummy")
+    cfg = {"classification": DEFAULT_RULES}
+    assert classify(f, cfg) == "Documents"
+
+
+def test_archive_category(tmp_path):
+    f = tmp_path / "archive.zip"
+    f.write_bytes(b"dummy")
+    cfg = {"classification": DEFAULT_RULES}
+    assert classify(f, cfg) == "Archives"
+
+
+def test_script_category(tmp_path):
+    f = tmp_path / "run.sh"
+    f.write_bytes(b"dummy")
+    cfg = {"classification": DEFAULT_RULES}
+    assert classify(f, cfg) == "Scripts"
