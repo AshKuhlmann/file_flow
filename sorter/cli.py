@@ -115,9 +115,16 @@ def move(
             cat = classify_file(f) or "Unsorted"
             target_dir = dest / cat
 
-            new_name_from_plugin = plugin_manager.rename_with_plugin(f)
-            if new_name_from_plugin:
-                final_dest = target_dir / new_name_from_plugin
+            new_stem_from_plugin = plugin_manager.rename_with_plugin(f)
+
+            if new_stem_from_plugin:
+                temp_path_for_collision_check = f.with_stem(new_stem_from_plugin)
+                final_dest = generate_name(
+                    temp_path_for_collision_check,
+                    target_dir,
+                    include_parent=False,
+                    date_from_mtime=False,
+                )
             else:
                 final_dest = generate_name(f, target_dir)
 
