@@ -174,6 +174,30 @@ def test_move_destination_exists(tmp_path, monkeypatch):
     assert "destination already exists" in result.stdout
 
 
+def test_report_format_option(tmp_path, monkeypatch):
+    src = tmp_path / "a.txt"
+    src.write_text("x")
+
+    monkeypatch.setattr("sorter.cli.scan_paths", lambda dirs: [src])
+    monkeypatch.setattr("sorter.cli.classify_file", lambda p: None)
+    monkeypatch.setattr(
+        "sorter.cli.generate_name", lambda *a, **k: tmp_path / "dest" / "a.txt"
+    )
+
+    captured = {}
+
+    def fake_build_report(mapping, *, auto_open=False, fmt="xlsx"):
+        captured["fmt"] = fmt
+        return tmp_path / f"rep.{fmt}"
+
+    monkeypatch.setattr("sorter.cli.build_report", fake_build_report)
+
+    runner = CliRunner()
+    result = runner.invoke(app, ["report", str(tmp_path), "--format", "json"])
+    assert result.exit_code == 0
+    assert captured["fmt"] == "json"
+
+
 def test_version_option():
     runner = CliRunner()
     result = runner.invoke(app, ["--version"])

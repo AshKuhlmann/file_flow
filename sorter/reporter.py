@@ -22,18 +22,25 @@ def build_report(
     *,
     dest: pathlib.Path | None = None,
     auto_open: bool = False,
+    fmt: str = "xlsx",
 ) -> pathlib.Path:
-    """Write an XLSX file describing the proposed moves.
+    """Write a report describing the proposed moves.
 
     *mapping* – iterable of (src, dst) absolute Paths.
-    Returns the path to the newly-created XLSX.
+    Returns the path to the newly-created file.
     Columns: old_path, new_path, size_bytes, modified_iso.
     Rows sorted lexicographically by old_path for reproducibility.
     If *auto_open* is True, attempts to open the file using OS default.
+    *fmt* may be "xlsx", "csv" or "json".
     """
 
-    if _pd is None or _col is None:
-        raise ModuleNotFoundError("pandas and openpyxl are required for build_report")
+    if _pd is None:
+        raise ModuleNotFoundError("pandas is required for build_report")
+    if fmt == "xlsx" and _col is None:
+        raise ModuleNotFoundError("openpyxl is required for build_report")
+
+    if fmt not in {"xlsx", "csv", "json"}:
+        raise ValueError(f"Unsupported format: {fmt}")
 
     rows: list[dict[str, str | int]] = []
     for src, dst in mapping:
@@ -53,22 +60,26 @@ def build_report(
     df = _pd.DataFrame(sorted(rows, key=lambda r: cast(str, r["old_path"])))
 
     if dest is None:
-        dest = (
-            pathlib.Path.cwd()
-            / f"file-sort-report_{_dt.datetime.now().strftime(_DATE_FMT)}.xlsx"
+        dest = pathlib.Path.cwd() / (
+            f"file-sort-report_{_dt.datetime.now().strftime(_DATE_FMT)}.{fmt}"
         )
     else:
         dest = dest.expanduser().resolve()
 
-    with _pd.ExcelWriter(dest, engine="openpyxl") as writer:
-        df.to_excel(writer, sheet_name="Report", index=False)
-        ws = writer.sheets["Report"]
-        for idx, column in enumerate(df.columns, start=1):
-            col = _col(idx)
-            ws[f"{col}1"].font = ws[f"{col}1"].font.copy(bold=True)
-            col_values = [column, *df.iloc[:, idx - 1].tolist()]
-            max_len = max(len(str(x)) for x in col_values)
-            ws.column_dimensions[col].width = min(max_len + 2, 80)
+    if fmt == "xlsx":
+        with _pd.ExcelWriter(dest, engine="openpyxl") as writer:
+            df.to_excel(writer, sheet_name="Report", index=False)
+            ws = writer.sheets["Report"]
+            for idx, column in enumerate(df.columns, start=1):
+                col = _col(idx)
+                ws[f"{col}1"].font = ws[f"{col}1"].font.copy(bold=True)
+                col_values = [column, *df.iloc[:, idx - 1].tolist()]
+                max_len = max(len(str(x)) for x in col_values)
+                ws.column_dimensions[col].width = min(max_len + 2, 80)
+    elif fmt == "csv":
+        df.to_csv(dest, index=False)
+    else:  # json
+        df.to_json(dest, orient="records", indent=2)
 
     if auto_open:
         _open_with_os(dest)

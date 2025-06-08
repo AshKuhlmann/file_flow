@@ -94,9 +94,10 @@ def report(
     ),
     dest: pathlib.Path = typer.Option(None, "--dest", file_okay=False, dir_okay=True),
     pattern: str | None = typer.Option(None, "--pattern", help="rename pattern"),
-    auto_open: bool = typer.Option(False, "--auto-open", help="open XLSX when done"),
+    auto_open: bool = typer.Option(False, "--auto-open", help="open report when done"),
+    fmt: str = typer.Option("xlsx", "--format", help="output format: xlsx, csv, json"),
 ) -> None:
-    """Generate an Excel report describing proposed moves."""
+    """Generate a report describing proposed moves."""
     try:
         log.debug("Generating report from %d source dirs", len(dirs))
         files = scan_paths(dirs)
@@ -110,7 +111,7 @@ def report(
             mapping.append((f, new_path))
             log.debug("map %s -> %s", f, new_path)
 
-        out = build_report(mapping, auto_open=auto_open)
+        out = build_report(mapping, auto_open=auto_open, fmt=fmt)
         log.info("Report ready: %s", out)
     except ModuleNotFoundError as exc:
         log.error(
