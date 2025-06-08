@@ -45,10 +45,11 @@ file-sorter stats ~/Downloads
 Set up pre-commit hooks to automatically run formatting and tests:
 ```bash
 pre-commit install
+pre-commit install -t pre-push
 ```
-After installation, the following checks run on each commit:
+After installation, the following checks run on each commit and push:
 - **black** for code formatting
 - **flake8** for linting
-- **mypy** for type checking
+- **mypy** for type checking (commit and push)
 - **pytest** for unit tests
 - **poetry lock** to update dependencies when `pyproject.toml` changes
