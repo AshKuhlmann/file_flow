@@ -24,3 +24,25 @@ def test_report_content(tmp_path: pathlib.Path) -> None:
     assert list(df.columns) == ["old_path", "new_path", "size_bytes", "modified_iso"]
     assert df.shape == (2, 4)
     assert set(df["size_bytes"]) == {3, 6}
+
+
+def test_report_csv(tmp_path: pathlib.Path) -> None:
+    src = _create(tmp_path, "a.txt")
+    dst = tmp_path / "Docs" / "a.txt"
+
+    csv_path = build_report([(src, dst)], dest=tmp_path / "out.csv", fmt="csv")
+    assert csv_path.exists()
+
+    df = pd.read_csv(csv_path)
+    assert list(df.columns) == ["old_path", "new_path", "size_bytes", "modified_iso"]
+
+
+def test_report_json(tmp_path: pathlib.Path) -> None:
+    src = _create(tmp_path, "a.txt")
+    dst = tmp_path / "Docs" / "a.txt"
+
+    jsn_path = build_report([(src, dst)], dest=tmp_path / "out.json", fmt="json")
+    assert jsn_path.exists()
+
+    df = pd.read_json(jsn_path)
+    assert list(df.columns) == ["old_path", "new_path", "size_bytes", "modified_iso"]
