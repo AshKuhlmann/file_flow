@@ -6,6 +6,7 @@ import pathlib
 
 def _load_module(name: str, path: pathlib.Path) -> types.ModuleType:
     spec = importlib.util.spec_from_file_location(name, path)
+    assert spec is not None
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(module)
@@ -26,7 +27,7 @@ sys.modules.setdefault("sorter", _sorter)
 _plugins_pkg = types.ModuleType("sorter.plugins")
 _plugins_pkg.__path__ = [str(ROOT / "sorter" / "plugins")]
 sys.modules.setdefault("sorter.plugins", _plugins_pkg)
-_sorter.plugins = _plugins_pkg
+setattr(_sorter, "plugins", _plugins_pkg)
 
 RenamerPlugin = _load_module(
     "sorter.plugins.base",
