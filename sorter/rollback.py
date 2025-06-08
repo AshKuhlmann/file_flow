@@ -5,7 +5,7 @@ import pathlib
 import shutil
 from typing import Final
 
-from .mover import _sha256
+from .utils import sha256sum as _sha256
 
 _TRASH_SUFFIX: Final = "__rollback_trash"
 

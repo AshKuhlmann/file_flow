@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-import hashlib
 import json
 import pathlib
 import shutil
 import time
-from typing import Any, Final, Sequence, TYPE_CHECKING
+from typing import Any, Sequence, TYPE_CHECKING
+
+from .utils import sha256sum
 
 if TYPE_CHECKING:  # pragma: no cover - typing support
     from rich.progress import Progress
@@ -27,16 +28,6 @@ try:
     _HAS_RICH = True
 except ModuleNotFoundError:
     _RealProgress = None
-
-_BUF: Final = 1 << 20  # 1 MiB copy buffer
-
-
-def _sha256(path: pathlib.Path) -> str:
-    h = hashlib.sha256()
-    with path.open("rb") as fp:
-        while chunk := fp.read(_BUF):
-            h.update(chunk)
-    return h.hexdigest()
 
 
 def move_with_log(
@@ -64,7 +55,7 @@ def move_with_log(
     with log_path.open("w", encoding="utf-8") as logfp:
         for src, dst in mapping:
             dst.parent.mkdir(parents=True, exist_ok=True)
-            checksum = _sha256(src)
+            checksum = sha256sum(src)
             category = dst.parent.name
             logfp.write(
                 json.dumps(
