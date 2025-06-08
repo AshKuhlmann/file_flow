@@ -439,6 +439,22 @@ typing-extensions = {version = ">=4.6.0", markers = "python_version < \"3.13\""}
 test = ["pytest (>=6)"]
 
 [[package]]
+name = "exifread"
+version = "3.3.1"
+description = "Library to extract Exif information from digital camera image files."
+optional = false
+python-versions = ">=3.7"
+groups = ["main"]
+files = [
+    {file = "exifread-3.3.1-py3-none-any.whl", hash = "sha256:b7405f890738dbca9992f74a326a4ac3d51512cd129353950d69e774dc5a1767"},
+    {file = "exifread-3.3.1.tar.gz", hash = "sha256:320d8596c1f674a1da2c10cf30408bb9675262c4c0181bebbd3570679d2f1340"},
+]
+
+[package.extras]
+dev = ["build (>=1.0,<2.0)", "pre-commit (>=2.21,<3.0)", "pylint (>=3.0,<4.0)"]
+test = ["pytest (>=7.4,<8.0)"]
+
+[[package]]
 name = "filelock"
 version = "3.18.0"
 description = "A platform independent file lock."
@@ -2068,4 +2084,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.9"
-content-hash = "8c000bc53512ddb09bad591efcf1d92b2eb7a81a1d844d141c438c91be4e0943"
+content-hash = "938f62bb0a0dfb01c776578f3ba26d5fbd56f0ed8c9c94ce4f10c6da817ea527"
