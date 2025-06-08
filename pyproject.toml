@@ -19,6 +19,7 @@ pyqt6 = "*"
 croniter = "^6.0.0"
 python-dateutil = "^2.9.0.post0"
 typer = "^0.16.0"
+ExifRead = "*"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.11.13"

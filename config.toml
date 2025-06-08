@@ -1,0 +1,11 @@
+fallback_category = "Other"
+
+[classification.Pictures]
+extensions = [".jpg", ".jpeg", ".png", ".gif"]
+
+[classification.Videos]
+extensions = [".mp4", ".mov", ".avi"]
+
+[plugins.exif_renamer]
+enabled = false
+pattern = "{year}{month}{day}_{hour}{minute}{second}"

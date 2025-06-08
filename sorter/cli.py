@@ -7,6 +7,8 @@ from rich import print
 
 from .scanner import scan_paths
 from .classifier import classify
+from .config import load_config
+from .plugin_manager import PluginManager
 from .reporter import build_report
 from .review import ReviewQueue
 from .renamer import generate_name
@@ -53,11 +55,12 @@ def report(
 ) -> None:
     """Generate an Excel report describing proposed moves."""
     try:
+        config = load_config()
         files = scan_paths(dirs)
         mapping: list[tuple[pathlib.Path, pathlib.Path]] = []
         base = dest or pathlib.Path.cwd()
         for f in files:
-            cat = classify(f) or "Unsorted"
+            cat = classify(f, config) or "Unsorted"
             target_dir = base / cat
             mapping.append((f, generate_name(f, target_dir)))
 
@@ -102,12 +105,21 @@ def move(
 ) -> None:
     """Scan, classify and move files into *dest*."""
     try:
+        config = load_config()
+        plugin_manager = PluginManager(config)
         files = scan_paths(dirs)
         mapping: list[tuple[pathlib.Path, pathlib.Path]] = []
         for f in files:
-            cat = classify(f) or "Unsorted"
+            cat = classify(f, config) or "Unsorted"
             target_dir = dest / cat
-            mapping.append((f, generate_name(f, target_dir)))
+
+            new_name_from_plugin = plugin_manager.rename_with_plugin(f)
+            if new_name_from_plugin:
+                final_dest = target_dir / new_name_from_plugin
+            else:
+                final_dest = generate_name(f, target_dir)
+
+            mapping.append((f, final_dest))
 
         report_path = build_report(mapping, auto_open=False)
         print(f"[bold]Report ready:[/bold] {report_path}")
