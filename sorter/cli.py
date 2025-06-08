@@ -15,10 +15,7 @@ from .reporter import build_report
 from .review import ReviewQueue
 from .renamer import generate_name
 from .mover import move_with_log
-from .rollback import rollback
 from .dupes import find_duplicates, delete_older as _delete_older
-from . import clustering
-from . import supervised
 
 
 app = typer.Typer(
@@ -163,7 +160,9 @@ def undo(
 ) -> None:
     """Undo file moves recorded in *log_file*."""
     try:
-        rollback(log_file)
+        from .rollback import rollback as _rollback
+
+        _rollback(log_file)
         log.info("Rollback complete.")
     except Exception as exc:  # pragma: no cover - defensive
         log.error("%s", exc)
@@ -239,6 +238,8 @@ def learn_clusters(
     ),
 ) -> None:
     """Analyze a directory to discover and label potential file categories."""
+    from . import clustering
+
     files = scan_paths([source_dir])
     clustered_df = clustering.train_cluster_model(files, n_clusters=clusters)
 
@@ -270,6 +271,8 @@ def train(
     )
 ) -> None:
     """Train a personalized classifier based on your move history."""
+    from . import supervised
+
     supervised.train_supervised_model(logs_dir)
 
 

@@ -7,7 +7,15 @@ import json
 import logging
 import magic  # python-magic
 
-from . import supervised, clustering
+try:  # optional ML modules
+    from . import supervised  # type: ignore
+except Exception:  # pragma: no cover - optional dep missing
+    supervised = None  # type: ignore
+
+try:
+    from . import clustering  # type: ignore
+except Exception:  # pragma: no cover - optional dep missing
+    clustering = None  # type: ignore
 from .config import load_config
 
 log = logging.getLogger(__name__)
@@ -48,11 +56,12 @@ def classify(path: pathlib.Path, config: Dict[str, Any]) -> Optional[str]:
 def classify_file(path: pathlib.Path) -> str:
     """Classify a file using models and fallback logic."""
 
-    # 1. Supervised model prediction
-    category = supervised.predict_category(path)
-    if category:
-        log.info("(Predicted: %s)", category)
-        return category
+    # 1. Supervised model prediction (optional)
+    if supervised is not None:
+        category = supervised.predict_category(path)
+        if category:
+            log.info("(Predicted: %s)", category)
+            return category
 
     # 2. Explicit rules from user config
     config = load_config()
@@ -60,8 +69,8 @@ def classify_file(path: pathlib.Path) -> str:
     if rule_category:
         return rule_category
 
-    # 3. Clustering model fallback using stored labels
-    if clustering.MODEL_PATH.exists():
+    # 3. Clustering model fallback using stored labels (optional)
+    if clustering is not None and clustering.MODEL_PATH.exists():
         cluster_id = clustering.predict_cluster(path)
         if cluster_id is not None and clustering.LABELS_PATH.exists():
             try:

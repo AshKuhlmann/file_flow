@@ -4,7 +4,10 @@ import json
 import pathlib
 import io
 
-import pandas as _pd  # type: ignore[import-untyped]
+try:
+    import pandas as _pd  # type: ignore[import-untyped]
+except Exception:  # pragma: no cover - optional dep missing
+    _pd = None  # type: ignore
 
 
 def build_dashboard(
@@ -13,6 +16,9 @@ def build_dashboard(
     dest: pathlib.Path | None = None,
 ) -> pathlib.Path:
     """Generate HTML dashboard from *logs*; return output path."""
+    if _pd is None:
+        raise ModuleNotFoundError("pandas is required for build_dashboard")
+
     import matplotlib
 
     matplotlib.use("Agg")

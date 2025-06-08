@@ -2,9 +2,32 @@ from __future__ import annotations
 
 import datetime as _dt
 import pathlib
-from typing import Final
+from typing import Final, Iterable, Pattern
 
-from slugify import slugify
+try:
+    from slugify import slugify as _slugify  # type: ignore
+except Exception:  # pragma: no cover - optional dep missing
+    import re
+
+    def _slugify(
+        text: str,
+        entities: bool = False,
+        decimal: bool = False,
+        hexadecimal: bool = False,
+        max_length: int = 0,
+        word_boundary: bool = False,
+        separator: str = "-",
+        save_order: bool = False,
+        stopwords: Iterable[str] = (),
+        regex_pattern: Pattern[str] | str | None = None,
+        lowercase: bool = True,
+        replacements: Iterable[Iterable[str]] = (),
+        allow_unicode: bool = False,
+    ) -> str:
+        text = re.sub(r"[\W_]+", " ", text, flags=re.UNICODE)
+        text = text.strip().lower()
+        text = re.sub(r"\s+", separator, text)
+        return text
 
 _DATE_FMT: Final = "%Y-%m-%d"
 
@@ -34,7 +57,7 @@ def generate_name(
     target_dir.mkdir(parents=True, exist_ok=True)
 
     parent_part = (
-        slugify(src.parent.name)
+        _slugify(src.parent.name)
         if include_parent and src.parent.name and src.parent != pathlib.Path(src.anchor)
         else ""
     )
@@ -45,7 +68,7 @@ def generate_name(
         else _dt.date.today().strftime(_DATE_FMT)
     )
 
-    base_part = slugify(src.stem) or "file"
+    base_part = _slugify(src.stem) or "file"
     ext = src.suffix.lower()
 
     pieces = [p for p in (parent_part, date_part, base_part) if p]
