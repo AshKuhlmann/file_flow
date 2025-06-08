@@ -65,11 +65,13 @@ def move_with_log(
         for src, dst in mapping:
             dst.parent.mkdir(parents=True, exist_ok=True)
             checksum = _sha256(src)
+            category = dst.parent.name
             logfp.write(
                 json.dumps(
                     {
                         "src": src.as_posix(),
                         "dst": dst.as_posix(),
+                        "category": category,
                         "sha256": checksum,
                         "size": src.stat().st_size,
                         "epoch": int(time.time()),

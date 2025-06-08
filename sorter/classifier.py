@@ -3,7 +3,11 @@ from __future__ import annotations
 import pathlib
 from typing import Any, Dict, Optional
 
+import json
 import magic  # python-magic
+
+from . import supervised, clustering
+from .config import load_config
 
 
 def classify(path: pathlib.Path, config: Dict[str, Any]) -> Optional[str]:
@@ -36,3 +40,34 @@ def classify(path: pathlib.Path, config: Dict[str, Any]) -> Optional[str]:
         return fallback_category
 
     return fallback_category
+
+
+def classify_file(path: pathlib.Path) -> str:
+    """Classify a file using models and fallback logic."""
+
+    # 1. Supervised model prediction
+    category = supervised.predict_category(path)
+    if category:
+        print(f"(Predicted: {category})")
+        return category
+
+    # 2. Explicit rules from user config
+    config = load_config()
+    rule_category = classify(path, config)
+    if rule_category:
+        return rule_category
+
+    # 3. Clustering model fallback using stored labels
+    if clustering.MODEL_PATH.exists():
+        cluster_id = clustering.predict_cluster(path)
+        if cluster_id is not None and clustering.LABELS_PATH.exists():
+            try:
+                with open(clustering.LABELS_PATH) as f:
+                    labels: dict[str, str] = json.load(f)
+                if str(cluster_id) in labels:
+                    return labels[str(cluster_id)]
+            except Exception:
+                pass
+
+    # 4. Final fallback using basic logic
+    return rule_category or "Unsorted"
