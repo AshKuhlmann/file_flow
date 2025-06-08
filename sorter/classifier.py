@@ -4,10 +4,13 @@ import pathlib
 from typing import Any, Dict, Optional
 
 import json
+import logging
 import magic  # python-magic
 
 from . import supervised, clustering
 from .config import load_config
+
+log = logging.getLogger(__name__)
 
 
 def classify(path: pathlib.Path, config: Dict[str, Any]) -> Optional[str]:
@@ -48,7 +51,7 @@ def classify_file(path: pathlib.Path) -> str:
     # 1. Supervised model prediction
     category = supervised.predict_category(path)
     if category:
-        print(f"(Predicted: {category})")
+        log.info("(Predicted: %s)", category)
         return category
 
     # 2. Explicit rules from user config
