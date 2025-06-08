@@ -1,32 +1,9 @@
 import json
-import sys
-import types
-import importlib.util
-import pathlib
-
-
-def _load_module(name: str, path: pathlib.Path):
-    spec = importlib.util.spec_from_file_location(name, path)
-    assert spec is not None
-    module = importlib.util.module_from_spec(spec)
-    assert spec.loader is not None
-    spec.loader.exec_module(module)
-    sys.modules[name] = module
-    if "." in name:
-        pkg, attr = name.rsplit(".", 1)
-        parent = sys.modules.setdefault(pkg, types.ModuleType(pkg))
-        setattr(parent, attr, module)
-    return module
-
-
-ROOT = pathlib.Path(__file__).resolve().parents[1]
-_sorter = types.ModuleType("sorter")
-_sorter.__path__ = [str(ROOT / "sorter")]
-sys.modules.setdefault("sorter", _sorter)
-
-rollback_mod = _load_module("sorter.rollback", ROOT / "sorter" / "rollback.py")
-
+import importlib
 import pytest
+from sorter import rollback
+
+rollback_mod = importlib.import_module("sorter.rollback")
 
 
 def test_checksum_mismatch(tmp_path, monkeypatch):
@@ -45,7 +22,7 @@ def test_checksum_mismatch(tmp_path, monkeypatch):
 
     monkeypatch.setattr(rollback_mod, "_sha256", lambda p: "actual")
     with pytest.raises(ValueError):
-        rollback_mod.rollback(log, strict=True)
+        rollback(log, strict=True)
 
 
 def test_checksum_mismatch_non_strict(tmp_path, monkeypatch):
@@ -64,6 +41,6 @@ def test_checksum_mismatch_non_strict(tmp_path, monkeypatch):
 
     monkeypatch.setattr(rollback_mod, "_sha256", lambda p: "actual")
 
-    rollback_mod.rollback(log, strict=False)
+    rollback(log, strict=False)
     assert src.exists() and src.read_text() == "y"
     assert not dst.exists()

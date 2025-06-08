@@ -15,7 +15,6 @@ from .reporter import build_report
 from .review import ReviewQueue
 from .renamer import generate_name
 from .mover import move_with_log
-from .rollback import rollback
 from .dupes import find_duplicates, delete_older as _delete_older
 from . import clustering
 from . import supervised
@@ -163,7 +162,9 @@ def undo(
 ) -> None:
     """Undo file moves recorded in *log_file*."""
     try:
-        rollback(log_file)
+        from .rollback import rollback as _rollback
+
+        _rollback(log_file)
         log.info("Rollback complete.")
     except Exception as exc:  # pragma: no cover - defensive
         log.error("%s", exc)

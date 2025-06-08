@@ -1,15 +1,42 @@
-from .scanner import scan_paths
-from .dupes import find_duplicates  # noqa: F401
-from .classifier import classify, classify_file  # noqa: F401
-from .config import load_config  # noqa: F401
-from .plugin_manager import PluginManager  # noqa: F401
-from .reporter import build_report  # noqa: F401
-from .review import ReviewQueue  # noqa: F401
-from .renamer import generate_name  # noqa: F401
-from .mover import move_with_log  # noqa: F401
-from .rollback import rollback  # noqa: F401
-from .stats import build_dashboard  # noqa: F401
-from .cli import app  # noqa: F401
+"""Public API for the file-sorter package.
+
+This module used to eagerly import all submodules which required a long list of
+optional third-party packages. In lightweight environments these imports would
+fail and make ``import sorter`` unusable. To avoid that, we now lazily load the
+needed objects on first access.
+"""
+
+from importlib import import_module
+from typing import Any, Dict, Tuple
+
+_EXPORTS: Dict[str, Tuple[str, str]] = {
+    "scan_paths": ("scanner", "scan_paths"),
+    "find_duplicates": ("dupes", "find_duplicates"),
+    "classify": ("classifier", "classify"),
+    "classify_file": ("classifier", "classify_file"),
+    "load_config": ("config", "load_config"),
+    "PluginManager": ("plugin_manager", "PluginManager"),
+    "build_report": ("reporter", "build_report"),
+    "ReviewQueue": ("review", "ReviewQueue"),
+    "generate_name": ("renamer", "generate_name"),
+    "move_with_log": ("mover", "move_with_log"),
+    "rollback": ("rollback", "rollback"),
+    "build_dashboard": ("stats", "build_dashboard"),
+    "app": ("cli", "app"),
+}
+
+
+def __getattr__(name: str) -> Any:
+    if name not in _EXPORTS:
+        raise AttributeError(name)
+    module_name, attr = _EXPORTS[name]
+    module = import_module(f".{module_name}", __name__)
+    value = getattr(module, attr)
+    globals()[name] = value
+    return value
+
+
+__all__ = list(_EXPORTS)
 
 __all__ = [
     "scan_paths",

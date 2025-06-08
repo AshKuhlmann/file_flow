@@ -7,8 +7,12 @@ import subprocess
 import sys
 from typing import Iterable, Final, cast
 
-import pandas as _pd  # type: ignore[import-untyped]
-from openpyxl.utils import get_column_letter as _col  # type: ignore[import-untyped]
+try:
+    import pandas as _pd  # type: ignore[import-untyped]
+    from openpyxl.utils import get_column_letter as _col  # type: ignore[import-untyped]
+except Exception:  # pragma: no cover - optional deps missing
+    _pd = None  # type: ignore
+    _col = None  # type: ignore
 
 _DATE_FMT: Final = "%Y%m%d_%H%M%S"
 
@@ -27,6 +31,9 @@ def build_report(
     Rows sorted lexicographically by old_path for reproducibility.
     If *auto_open* is True, attempts to open the file using OS default.
     """
+
+    if _pd is None or _col is None:
+        raise ModuleNotFoundError("pandas and openpyxl are required for build_report")
 
     rows: list[dict[str, str | int]] = []
     for src, dst in mapping:

@@ -4,7 +4,14 @@ import datetime as _dt
 import pathlib
 from typing import Final
 
-from slugify import slugify
+try:
+    from slugify import slugify as _slugify  # type: ignore
+except Exception:  # pragma: no cover - optional dep missing
+    import re
+
+    def _slugify(text: str) -> str:
+        text = re.sub(r"[^\w-]+", "_", text)
+        return re.sub(r"_+", "_", text).strip("_").lower()
 
 _DATE_FMT: Final = "%Y-%m-%d"
 
@@ -34,7 +41,7 @@ def generate_name(
     target_dir.mkdir(parents=True, exist_ok=True)
 
     parent_part = (
-        slugify(src.parent.name)
+        _slugify(src.parent.name)
         if include_parent and src.parent.name and src.parent != pathlib.Path(src.anchor)
         else ""
     )
@@ -45,7 +52,7 @@ def generate_name(
         else _dt.date.today().strftime(_DATE_FMT)
     )
 
-    base_part = slugify(src.stem) or "file"
+    base_part = _slugify(src.stem) or "file"
     ext = src.suffix.lower()
 
     pieces = [p for p in (parent_part, date_part, base_part) if p]
