@@ -1,0 +1,58 @@
+import json
+from sorter.classifier import classify_file
+
+
+def test_supervised_prediction(tmp_path, monkeypatch):
+    f = tmp_path / "file.txt"
+    f.write_text("x")
+
+    monkeypatch.setattr("sorter.supervised.predict_category", lambda p: "Docs")
+    monkeypatch.setattr("sorter.config.load_config", lambda: {})
+
+    assert classify_file(f) == "Docs"
+
+
+def test_rule_based(tmp_path, monkeypatch):
+    f = tmp_path / "picture.jpg"
+    f.write_bytes(b"x")
+
+    monkeypatch.setattr("sorter.supervised.predict_category", lambda p: None)
+    monkeypatch.setattr(
+        "sorter.config.load_config",
+        lambda: {"classification": {"Pictures": {"extensions": [".jpg"]}}},
+    )
+
+    assert classify_file(f) == "Pictures"
+
+
+def test_cluster_label(tmp_path, monkeypatch):
+    f = tmp_path / "unknown.bin"
+    f.write_bytes(b"x")
+
+    model_path = tmp_path / "model.joblib"
+    model_path.touch()
+    labels_path = tmp_path / "labels.json"
+    labels_path.write_text(json.dumps({"1": "Music"}))
+
+    monkeypatch.setattr("sorter.supervised.predict_category", lambda p: None)
+    monkeypatch.setattr("sorter.config.load_config", lambda: {"fallback_category": None})
+    monkeypatch.setattr("sorter.classifier.classify", lambda p, c: None)
+    monkeypatch.setattr("sorter.clustering.MODEL_PATH", model_path)
+    monkeypatch.setattr("sorter.clustering.LABELS_PATH", labels_path)
+    monkeypatch.setattr("sorter.clustering.predict_cluster", lambda p: 1)
+
+    assert classify_file(f) == "Music"
+
+
+def test_unsorted(tmp_path, monkeypatch):
+    f = tmp_path / "mystery.dat"
+    f.write_bytes(b"x")
+
+    monkeypatch.setattr("sorter.supervised.predict_category", lambda p: None)
+    monkeypatch.setattr("sorter.config.load_config", lambda: {"fallback_category": None})
+    monkeypatch.setattr("sorter.classifier.classify", lambda p, c: None)
+    monkeypatch.setattr("sorter.clustering.MODEL_PATH", tmp_path / "no_model")
+    monkeypatch.setattr("sorter.clustering.LABELS_PATH", tmp_path / "no_labels")
+    monkeypatch.setattr("sorter.clustering.predict_cluster", lambda p: None)
+
+    assert classify_file(f) == "Unsorted"
