@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import pathlib
+import json
 
 import typer
 from rich import print
 
 from .scanner import scan_paths
-from .classifier import classify
+from .classifier import classify_file
 from .config import load_config
 from .plugin_manager import PluginManager
 from .reporter import build_report
@@ -15,6 +16,8 @@ from .renamer import generate_name
 from .mover import move_with_log
 from .rollback import rollback
 from .dupes import find_duplicates, delete_older as _delete_older
+from . import clustering
+from . import supervised
 
 
 app = typer.Typer(add_completion=False, rich_markup_mode="rich")
@@ -55,12 +58,11 @@ def report(
 ) -> None:
     """Generate an Excel report describing proposed moves."""
     try:
-        config = load_config()
         files = scan_paths(dirs)
         mapping: list[tuple[pathlib.Path, pathlib.Path]] = []
         base = dest or pathlib.Path.cwd()
         for f in files:
-            cat = classify(f, config) or "Unsorted"
+            cat = classify_file(f) or "Unsorted"
             target_dir = base / cat
             mapping.append((f, generate_name(f, target_dir)))
 
@@ -110,7 +112,7 @@ def move(
         files = scan_paths(dirs)
         mapping: list[tuple[pathlib.Path, pathlib.Path]] = []
         for f in files:
-            cat = classify(f, config) or "Unsorted"
+            cat = classify_file(f) or "Unsorted"
             target_dir = dest / cat
 
             new_name_from_plugin = plugin_manager.rename_with_plugin(f)
@@ -203,6 +205,48 @@ def stats(
 
     dash = build_dashboard(logs, dest=out)
     print(f"[green]Dashboard written to {dash}[/green]")
+
+
+@app.command()
+def learn_clusters(
+    source_dir: pathlib.Path = typer.Argument(..., exists=True, file_okay=False),
+    clusters: int = typer.Option(
+        10, "--k", help="The number of categories to look for."
+    ),
+) -> None:
+    """Analyze a directory to discover and label potential file categories."""
+    files = scan_paths([source_dir])
+    clustered_df = clustering.train_cluster_model(files, n_clusters=clusters)
+
+    if clustered_df is None:
+        return
+
+    cluster_labels: dict[str, str] = {}
+    for cluster_id, group in clustered_df.groupby("cluster"):
+        print(f"\n--- Cluster {cluster_id} ---")
+        sample_files = [path.name for path in group["path"].head(5)]
+        print("Contains files like:", ", ".join(sample_files))
+        category_name = typer.prompt(
+            "What would you like to name this category? (or press Enter to skip)"
+        )
+        if category_name:
+            cluster_labels[str(cluster_id)] = category_name
+
+    if cluster_labels:
+        with open(clustering.LABELS_PATH, "w") as f:
+            json.dump(cluster_labels, f)
+        print(f"\nCategory labels saved to {clustering.LABELS_PATH}")
+
+
+@app.command()
+def train(
+    logs_dir: pathlib.Path = typer.Argument(
+        pathlib.Path.cwd(),
+        help="Directory containing your 'file-sort-log_*.jsonl' files.",
+    )
+) -> None:
+    """Train a personalized classifier based on your move history."""
+    supervised.train_supervised_model(logs_dir)
 
 
 def main() -> None:  # pragma: no cover - manual execution

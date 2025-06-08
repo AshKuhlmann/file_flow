@@ -1,6 +1,6 @@
 from .scanner import scan_paths
 from .dupes import find_duplicates  # noqa: F401
-from .classifier import classify  # noqa: F401
+from .classifier import classify, classify_file  # noqa: F401
 from .config import load_config  # noqa: F401
 from .plugin_manager import PluginManager  # noqa: F401
 from .reporter import build_report  # noqa: F401
@@ -14,6 +14,7 @@ from .cli import app  # noqa: F401
 __all__ = [
     "scan_paths",
     "classify",
+    "classify_file",
     "load_config",
     "PluginManager",
     "build_report",
