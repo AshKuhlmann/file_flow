@@ -24,6 +24,7 @@ def test_train_cluster_model(tmp_path: pathlib.Path):
     # Verify that KMeans was called multiple times to find the best k
     assert mock_kmeans.call_count > 1
 
+
 def test_train_cluster_model_integration(tmp_path, monkeypatch):
     (tmp_path / "a1.txt").write_text("dog dog dog")
     (tmp_path / "a2.txt").write_text("dog dog")

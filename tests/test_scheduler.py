@@ -91,9 +91,18 @@ def test_install_windows(monkeypatch, tmp_path):
     assert "/XML" in captured["args"]
     assert str(xml_file) in captured["args"]
 
+
 def test_install_cron_entry(monkeypatch):
     out = {}
-    def fake_run(args, *, capture_output=False, text=False, input=None, check=False):
+
+    def fake_run(
+        args,
+        *,
+        capture_output=False,
+        text=False,
+        input=None,
+        check=False,
+    ):
         if args == ["crontab", "-l"]:
             return type("R", (), {"stdout": "# file-sorter\n"})()
         out['args'] = args

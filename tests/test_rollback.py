@@ -45,6 +45,7 @@ def test_checksum_mismatch_non_strict(tmp_path, monkeypatch):
     assert src.exists() and src.read_text() == "y"
     assert not dst.exists()
 
+
 def test_partial_rollback_missing_source(tmp_path):
     src = tmp_path / "src.txt"
     dst = tmp_path / "dst.txt"

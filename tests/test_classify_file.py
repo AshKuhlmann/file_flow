@@ -64,6 +64,7 @@ def test_unsorted(tmp_path, monkeypatch):
 
     assert classify_file(f) == "Unsorted"
 
+
 def test_custom_config_rules(tmp_path, monkeypatch):
     f = tmp_path / "data.xyz"
     f.write_text("x")

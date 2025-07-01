@@ -1,6 +1,12 @@
 import os
+import pytest
+
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
-from sorter_gui.app import MainWindow
+
+try:  # noqa: E402
+    from sorter_gui.app import MainWindow
+except Exception as exc:  # pragma: no cover - optional dependency
+    pytest.skip(f"PyQt not available: {exc}", allow_module_level=True)
 
 
 def test_main_window_creation(qtbot):

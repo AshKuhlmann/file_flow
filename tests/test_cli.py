@@ -217,12 +217,27 @@ def test_move_invalid_pattern(tmp_path):
     (tmp_path / "file.txt").write_text("x")
     dest = tmp_path / "dest"
     runner = CliRunner()
-    result = runner.invoke(app, ["move", str(tmp_path), "--dest", str(dest), "--pattern", "{foo}", "--no-dry-run", "--yes"])
+    result = runner.invoke(
+        app,
+        [
+            "move",
+            str(tmp_path),
+            "--dest",
+            str(dest),
+            "--pattern",
+            "{foo}",
+            "--no-dry-run",
+            "--yes",
+        ],
+    )
     assert result.exit_code != 0
 
 
 def test_scan_permission_denied(monkeypatch, tmp_path):
-    monkeypatch.setattr("sorter.cli.scan_paths", lambda dirs: (_ for _ in ()).throw(PermissionError("denied")))
+    monkeypatch.setattr(
+        "sorter.cli.scan_paths",
+        lambda dirs: (_ for _ in ()).throw(PermissionError("denied")),
+    )
     runner = CliRunner()
     result = runner.invoke(app, ["scan", str(tmp_path)])
     assert result.exit_code == 1
@@ -232,9 +247,28 @@ def test_move_permission_denied(monkeypatch, tmp_path):
     f = tmp_path / "file.txt"
     f.write_text("x")
     dest = tmp_path / "dest"
-    monkeypatch.setattr("sorter.cli.plan_moves", lambda *a, **k: [(f, dest/f.name)])
-    monkeypatch.setattr("sorter.cli.build_report", lambda *a, **k: tmp_path/"rep.xlsx")
-    monkeypatch.setattr("sorter.cli.move_with_log", lambda *a, **k: (_ for _ in ()).throw(PermissionError("denied")))
+    monkeypatch.setattr(
+        "sorter.cli.plan_moves",
+        lambda *a, **k: [(f, dest / f.name)],
+    )
+    monkeypatch.setattr(
+        "sorter.cli.build_report",
+        lambda *a, **k: tmp_path / "rep.xlsx",
+    )
+    monkeypatch.setattr(
+        "sorter.cli.move_with_log",
+        lambda *a, **k: (_ for _ in ()).throw(PermissionError("denied")),
+    )
     runner = CliRunner()
-    result = runner.invoke(app, ["move", str(tmp_path), "--dest", str(dest), "--no-dry-run", "--yes"])
+    result = runner.invoke(
+        app,
+        [
+            "move",
+            str(tmp_path),
+            "--dest",
+            str(dest),
+            "--no-dry-run",
+            "--yes",
+        ],
+    )
     assert result.exit_code == 1
