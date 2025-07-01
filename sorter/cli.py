@@ -215,16 +215,24 @@ def dupes(
 @handle_cli_errors
 @app.command()
 def schedule(
-    cron: str = typer.Option("0 3 * * *", help="cron expression"),
     dirs: list[pathlib.Path] = typer.Argument(...),
     dest: pathlib.Path = typer.Option(..., "--dest"),
+    cron: str | None = typer.Option(None, "--cron", help="cron expression"),
+    time: str | None = typer.Option(None, "--time", help="HH:MM run time"),
+    day: str | None = typer.Option(None, "--day", help="day of week"),
 ) -> None:
-    """Install nightly dry-run that emails report."""
-    from .scheduler import validate_cron, install_job
+    """Install scheduled dry-run that emails report."""
+    from .scheduler import install_job, build_cron, validate_cron
 
-    log.debug("Scheduling job '%s' for dirs: %s", cron, ", ".join(str(d) for d in dirs))
-    validate_cron(cron)
-    install_job(cron, dirs=[*dirs], dest=dest)
+    if cron is not None:
+        validate_cron(cron)
+        cron_expr = cron
+    else:
+        cron_expr = build_cron(time=time, day=day)
+
+    dir_list = ", ".join(str(d) for d in dirs)
+    log.debug("Scheduling job '%s' for dirs: %s", cron_expr, dir_list)
+    install_job(cron_expr, dirs=[*dirs], dest=dest)
     log.info("Scheduler entry installed.")
 
 

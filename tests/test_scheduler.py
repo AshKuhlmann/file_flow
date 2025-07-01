@@ -10,6 +10,7 @@ scheduler = importlib.util.module_from_spec(spec)
 assert spec.loader is not None
 spec.loader.exec_module(scheduler)
 validate_cron = scheduler.validate_cron
+build_cron = scheduler.build_cron
 
 
 @pytest.mark.parametrize("expr", ["0 0 * * *", "15 4 * * 1-5"])
@@ -21,6 +22,10 @@ def test_valid_cron(expr):
 def test_invalid_cron(expr):
     with pytest.raises(ValueError):
         validate_cron(expr)
+
+
+def test_build_cron():
+    assert build_cron(time="04:05", day="tue") == "5 4 * * 2"
 
 
 def test_install_job_linux(monkeypatch, tmp_path):
@@ -81,13 +86,14 @@ def test_install_windows(monkeypatch, tmp_path):
     monkeypatch.setattr(scheduler.subprocess, "run", fake_run)
     monkeypatch.setenv("TEMP", str(tmp_path))
 
-    scheduler._install_windows("0 0 * * *", "cmd")
+    scheduler._install_windows("0 0 * * 1", "cmd")
 
     xml_file = tmp_path / "Task.xml"
     assert xml_file.exists()
     content = xml_file.read_text()
     assert "<Command>cmd</Command>" in content
     assert "<StartBoundary>2024-01-01T00:00:00</StartBoundary>" in content
+    assert "<Monday/>" in content
     assert "/XML" in captured["args"]
     assert str(xml_file) in captured["args"]
 

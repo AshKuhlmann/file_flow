@@ -67,6 +67,39 @@ def test_schedule_command(tmp_path, monkeypatch):
     assert calls["install"] == ("5 4 * * *", [tmp_path], dest)
 
 
+def test_schedule_command_time_day(tmp_path, monkeypatch):
+    calls = {}
+
+    def fake_build(time=None, day=None):
+        calls["build"] = (time, day)
+        return "5 4 * * 2"
+
+    def fake_install(cron, *, dirs, dest):
+        calls["install"] = (cron, dirs, dest)
+
+    monkeypatch.setattr("sorter.scheduler.build_cron", fake_build)
+    monkeypatch.setattr("sorter.scheduler.install_job", fake_install)
+
+    runner = CliRunner()
+    dest = tmp_path / "dest"
+    result = runner.invoke(
+        app,
+        [
+            "schedule",
+            str(tmp_path),
+            "--dest",
+            str(dest),
+            "--time",
+            "04:05",
+            "--day",
+            "tue",
+        ],
+    )
+    assert result.exit_code == 0
+    assert calls["build"] == ("04:05", "tue")
+    assert calls["install"] == ("5 4 * * 2", [tmp_path], dest)
+
+
 def test_stats_command(tmp_path, monkeypatch):
     log = tmp_path / "file-sort-log_1.jsonl"
     log.write_text("{}\n")
