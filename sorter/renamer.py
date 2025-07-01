@@ -63,6 +63,17 @@ def generate_name(
     target_dir = target_dir.expanduser().resolve()
     target_dir.mkdir(parents=True, exist_ok=True)
 
+    if pattern:
+        name = _get_name_from_pattern(src, pattern, include_parent, date_from_mtime)
+    else:
+        name = _get_default_name(src, include_parent, date_from_mtime)
+
+    return _resolve_collisions(target_dir, name)
+
+
+def _build_tokens(src: pathlib.Path, include_parent: bool, date_from_mtime: bool) -> dict[str, str]:
+    """Return tokens used for naming."""
+
     parent_part = (
         _slugify(src.parent.name)
         if include_parent and src.parent.name and src.parent != pathlib.Path(src.anchor)
@@ -78,29 +89,37 @@ def generate_name(
     base_part = _slugify(src.stem) or "file"
     ext = src.suffix.lower()
 
-    tokens = {
-        "parent": parent_part,
-        "date": date_part,
-        "stem": base_part,
-        "ext": ext,
-    }
+    return {"parent": parent_part, "date": date_part, "stem": base_part, "ext": ext}
 
-    if pattern:
-        name = pattern.format(**tokens)
-        candidate = target_dir / name
-        stem = pathlib.Path(name).stem
-        ext_in_pattern = pathlib.Path(name).suffix
-    else:
-        pieces = [p for p in (parent_part, date_part, base_part) if p]
-        stem = "_".join(pieces)
-        ext_in_pattern = ext
-        name = f"{stem}{ext_in_pattern}"
-        candidate = target_dir / name
 
+def _get_name_from_pattern(
+    src: pathlib.Path, pattern: str, include_parent: bool, date_from_mtime: bool
+) -> str:
+    """Generate a file name from a user-provided pattern."""
+
+    tokens = _build_tokens(src, include_parent, date_from_mtime)
+    return pattern.format(**tokens)
+
+
+def _get_default_name(src: pathlib.Path, include_parent: bool, date_from_mtime: bool) -> str:
+    """Generate a default file name."""
+
+    tokens = _build_tokens(src, include_parent, date_from_mtime)
+    pieces = [p for p in (tokens["parent"], tokens["date"], tokens["stem"]) if p]
+    stem = "_".join(pieces)
+    return f"{stem}{tokens['ext']}"
+
+
+def _resolve_collisions(target_dir: pathlib.Path, name: str) -> pathlib.Path:
+    """Append a counter to ``name`` if a file with the same name already exists."""
+
+    candidate = target_dir / name
+    stem = pathlib.Path(name).stem
+    ext = pathlib.Path(name).suffix
     counter = 2
     existing = {p.name.lower() for p in target_dir.iterdir()}
     while candidate.name.lower() in existing:
-        candidate = target_dir / f"{stem}__{counter}{ext_in_pattern}"
+        candidate = target_dir / f"{stem}__{counter}{ext}"
         counter += 1
 
     return candidate.resolve()
