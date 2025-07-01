@@ -63,3 +63,21 @@ def test_unsorted(tmp_path, monkeypatch):
     monkeypatch.setattr("sorter.clustering.predict_cluster", lambda p: None)
 
     assert classify_file(f) == "Unsorted"
+
+def test_custom_config_rules(tmp_path, monkeypatch):
+    f = tmp_path / "data.xyz"
+    f.write_text("x")
+    cfg = Settings(classification={"XYZ": {"extensions": [".xyz"]}})
+    monkeypatch.setattr("sorter.classifier.load_config", lambda: cfg)
+    monkeypatch.setattr("sorter.supervised.predict_category", lambda p: None)
+    assert classify_file(f) == "XYZ"
+
+
+def test_mime_type_classification(monkeypatch, tmp_path):
+    f = tmp_path / "foo.bin"
+    f.write_bytes(b"x")
+    monkeypatch.setattr("magic.from_file", lambda *a, **k: "audio/flac")
+    cfg = Settings(classification={"Audio": {"mimetypes": ["audio/flac"]}})
+    monkeypatch.setattr("sorter.classifier.load_config", lambda: cfg)
+    monkeypatch.setattr("sorter.supervised.predict_category", lambda p: None)
+    assert classify_file(f) == "Audio"

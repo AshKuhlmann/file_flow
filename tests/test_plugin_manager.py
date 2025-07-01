@@ -35,3 +35,32 @@ def test_plugin_loading_and_rename(monkeypatch):
 
     disabled = PluginManager({"plugins": {"temp_plugin": {"enabled": False}}})
     assert disabled.renamer_plugins == []
+
+def test_real_plugins_loading(monkeypatch):
+    cfg = {
+        "plugins": {
+            "exif_renamer": {"enabled": True},
+            "id3_renamer": {"enabled": True},
+        }
+    }
+    monkeypatch.setattr("sorter.plugins.exif_renamer.Plugin.rename", lambda self, p: "exif")
+    monkeypatch.setattr("sorter.plugins.id3_renamer.Plugin.rename", lambda self, p: "id3")
+    manager = PluginManager(cfg)
+    assert [p.__class__.__module__.split('.')[-1] for p in manager.renamer_plugins] == ["exif_renamer", "id3_renamer"]
+    assert manager.rename_with_plugin(pathlib.Path("file.jpg")) == "exif"
+
+
+def test_multiple_plugins_order(monkeypatch):
+    cfg = {"plugins": {"exif_renamer": {"enabled": True}, "id3_renamer": {"enabled": True}}}
+    calls = []
+    def exif_rename(self, p):
+        calls.append("exif")
+        return None
+    def id3_rename(self, p):
+        calls.append("id3")
+        return "done"
+    monkeypatch.setattr("sorter.plugins.exif_renamer.Plugin.rename", exif_rename)
+    monkeypatch.setattr("sorter.plugins.id3_renamer.Plugin.rename", id3_rename)
+    manager = PluginManager(cfg)
+    manager.rename_with_plugin(pathlib.Path("song.mp3"))
+    assert calls == ["exif", "id3"]

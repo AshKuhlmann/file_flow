@@ -90,3 +90,16 @@ def test_install_windows(monkeypatch, tmp_path):
     assert "<StartBoundary>2024-01-01T00:00:00</StartBoundary>" in content
     assert "/XML" in captured["args"]
     assert str(xml_file) in captured["args"]
+
+def test_install_cron_entry(monkeypatch):
+    out = {}
+    def fake_run(args, *, capture_output=False, text=False, input=None, check=False):
+        if args == ["crontab", "-l"]:
+            return type("R", (), {"stdout": "# file-sorter\n"})()
+        out['args'] = args
+        out['input'] = input
+        return type("R", (), {})()
+    monkeypatch.setattr(scheduler.subprocess, "run", fake_run)
+    scheduler._install_cron("15 5 * * *", "cmd")
+    assert "15 5 * * * cmd && file-sorter report --auto-open" in out['input']
+    assert out['input'].startswith("# file-sorter")
