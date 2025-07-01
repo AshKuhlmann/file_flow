@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import pathlib
-import json
 
 import typer
 import logging
@@ -252,36 +251,25 @@ def stats(
 @app.command()
 def learn_clusters(
     source_dir: pathlib.Path = typer.Argument(..., exists=True, file_okay=False),
-    clusters: int = typer.Option(
-        10, "--k", help="The number of categories to look for."
-    ),
 ) -> None:
     """Analyze a directory to discover and label potential file categories."""
     from . import clustering
+    import shutil
 
     log.debug("Learning clusters from %s", source_dir)
     files = scan_paths([source_dir])
-    clustered_df = clustering.train_cluster_model(files, n_clusters=clusters)
+    clustered_df = clustering.train_cluster_model(files)
 
     if clustered_df is None:
         return
 
-    cluster_labels: dict[str, str] = {}
     for cluster_id, group in clustered_df.groupby("cluster"):
-        log.info("\n--- Cluster %s ---", cluster_id)
-        sample_files = [path.name for path in group["path"].head(5)]
-        log.info("Contains files like: %s", ", ".join(sample_files))
-        category_name = typer.prompt(
-            "What would you like to name this category? (or press Enter to skip)"
-        )
-        if category_name:
-            cluster_labels[str(cluster_id)] = category_name
-
-    if cluster_labels:
-        with open(clustering.LABELS_PATH, "w") as f:
-            json.dump(cluster_labels, f)
-        log.info("\nCategory labels saved to %s", clustering.LABELS_PATH)
-        log.debug("Saved labels: %s", cluster_labels)
+        cluster_name = f"Cluster {cluster_id}"
+        cluster_dir = source_dir / cluster_name
+        cluster_dir.mkdir(exist_ok=True)
+        for file_path in group["path"]:
+            shutil.move(str(file_path), str(cluster_dir))
+    log.info("Files have been sorted into cluster subdirectories.")
 
 
 @handle_cli_errors
