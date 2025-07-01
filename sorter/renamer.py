@@ -71,7 +71,11 @@ def generate_name(
     return _resolve_collisions(target_dir, name)
 
 
-def _build_tokens(src: pathlib.Path, include_parent: bool, date_from_mtime: bool) -> dict[str, str]:
+def _build_tokens(
+    src: pathlib.Path,
+    include_parent: bool,
+    date_from_mtime: bool,
+) -> dict[str, str]:
     """Return tokens used for naming."""
 
     parent_part = (
@@ -101,7 +105,11 @@ def _get_name_from_pattern(
     return pattern.format(**tokens)
 
 
-def _get_default_name(src: pathlib.Path, include_parent: bool, date_from_mtime: bool) -> str:
+def _get_default_name(
+    src: pathlib.Path,
+    include_parent: bool,
+    date_from_mtime: bool,
+) -> str:
     """Generate a default file name."""
 
     tokens = _build_tokens(src, include_parent, date_from_mtime)
