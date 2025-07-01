@@ -1,13 +1,14 @@
-import json
 import pathlib
-import shutil
 from typer.testing import CliRunner
 import os
 import datetime as _dt
 
 from sorter import app
 
+
 # Helper function to create dummy files
+
+
 def create_dummy_file(path: pathlib.Path, content: str = "dummy content"):
     """Creates a dummy file with some content and fixed modification time."""
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -23,7 +24,10 @@ def test_move_command_dry_run(tmp_path):
     dest_dir = tmp_path / "destination"
     create_dummy_file(source_dir / "test_file.txt")
 
-    result = runner.invoke(app, ["move", str(source_dir), "--dest", str(dest_dir), "--dry-run"])
+    result = runner.invoke(
+        app,
+        ["move", str(source_dir), "--dest", str(dest_dir), "--dry-run"],
+    )
 
     assert result.exit_code == 0
     assert "Dry-run complete" in result.stdout
@@ -32,20 +36,28 @@ def test_move_command_dry_run(tmp_path):
 
 
 def test_move_command_with_classification(tmp_path):
-    """Tests the 'move' command to ensure files are classified and moved to the correct subdirectories."""
+    """Tests the 'move' command to ensure files are classified and moved to
+    the correct subdirectories."""
     runner = CliRunner()
     source_dir = tmp_path / "source"
     dest_dir = tmp_path / "destination"
     create_dummy_file(source_dir / "image.jpg")
     create_dummy_file(source_dir / "document.pdf")
 
-    result = runner.invoke(app, ["move", str(source_dir), "--dest", str(dest_dir), "--no-dry-run", "--yes"])
+    result = runner.invoke(
+        app,
+        ["move", str(source_dir), "--dest", str(dest_dir), "--no-dry-run", "--yes"],
+    )
 
     assert result.exit_code == 0
     assert not (source_dir / "image.jpg").exists()
     assert not (source_dir / "document.pdf").exists()
-    assert (dest_dir / "Pictures" / f"{source_dir.name}_2025-06-30_image.jpg").exists()
-    assert (dest_dir / "Documents" / f"{source_dir.name}_2025-06-30_document.pdf").exists()
+    assert (
+        dest_dir / "Pictures" / f"{source_dir.name}_2025-06-30_image.jpg"
+    ).exists()
+    assert (
+        dest_dir / "Documents" / f"{source_dir.name}_2025-06-30_document.pdf"
+    ).exists()
 
 
 def test_dupes_command(tmp_path):
@@ -94,7 +106,10 @@ def test_undo_command(tmp_path):
         lf.unlink()
 
     # First, move the file
-    result_move = runner.invoke(app, ["move", str(source_dir), "--dest", str(dest_dir), "--no-dry-run", "--yes"])
+    result_move = runner.invoke(
+        app,
+        ["move", str(source_dir), "--dest", str(dest_dir), "--no-dry-run", "--yes"],
+    )
     assert result_move.exit_code == 0
 
     # Find the log file
