@@ -29,7 +29,7 @@ def classify(
 ) -> Optional[str]:
     """Return category label for *path* based on provided config."""
     if isinstance(config, Settings):
-        classification_rules: Dict[str, Dict[str, Any]] = {
+        classification_rules = {
             k: v.model_dump() if isinstance(v, BaseModel) else v
             for k, v in config.classification.items()
         }
@@ -38,31 +38,42 @@ def classify(
         classification_rules = config.get("classification", {})
         fallback_category = config.get("fallback_category", "Other")
 
+    # 1. Check for a match in the classification rules (by extension or mimetype)
     for category, rules in classification_rules.items():
         if path.suffix.lower() in rules.get("extensions", []):
             return category
-        try:
-            mime = magic.from_file(path.as_posix(), mime=True)
-            if mime in rules.get("mimetypes", []):
-                return category
-        except Exception:
-            pass
+        if _matches_mimetype(path, rules.get("mimetypes", [])):
+            return category
 
+    # 2. Fallback to a generic category based on the major mimetype
+    return _get_generic_category(path) or fallback_category
+
+
+def _matches_mimetype(path: pathlib.Path, mimetypes: list[str]) -> bool:
+    """Check if the file's mimetype is in the provided list."""
+    if not mimetypes:
+        return False
     try:
         mime = magic.from_file(path.as_posix(), mime=True)
-        major = mime.split("/", 1)[0]
-        if major in ["video", "audio", "image", "text", "application"]:
-            return {
-                "video": "Videos",
-                "audio": "Audio",
-                "image": "Pictures",
-                "text": "Documents",
-                "application": "Documents",
-            }.get(major)
+        return mime in mimetypes
     except Exception:
-        return fallback_category
+        return False
 
-    return fallback_category
+
+def _get_generic_category(path: pathlib.Path) -> Optional[str]:
+    """Get a generic category based on the file's major mimetype."""
+    try:
+        mime = magic.from_file(path.as_posix(), mime=True)
+        major, _, _ = mime.partition("/")
+        return {
+            "video": "Videos",
+            "audio": "Audio",
+            "image": "Pictures",
+            "text": "Documents",
+            "application": "Documents",
+        }.get(major)
+    except Exception:
+        return None
 
 
 def classify_file(path: pathlib.Path) -> str:
