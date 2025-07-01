@@ -1,5 +1,4 @@
 import pathlib
-import shutil
 from unittest.mock import patch
 
 from sorter import clustering

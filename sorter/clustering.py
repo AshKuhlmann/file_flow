@@ -46,7 +46,9 @@ def train_cluster_model(file_paths: list[pathlib.Path]):
         return
 
     log.info(
-        f"Optimal number of clusters found: {best_k} with a silhouette score of {best_score:.2f}"
+        "Optimal number of clusters found: %d with a silhouette score of %.2f",
+        best_k,
+        best_score,
     )
 
     # Only cluster if the score is reasonably high
