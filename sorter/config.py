@@ -1,5 +1,6 @@
 import pathlib
 import tomllib
+import os
 from typing import Optional
 
 from pydantic import BaseModel, Field
@@ -38,7 +39,27 @@ class Settings(BaseModel):
 
 def load_config(path: pathlib.Path = DEFAULT_CONFIG_PATH) -> Settings:
     """Load the TOML configuration file and validate it."""
-    return Settings.load(path)
+    # Explicit path argument takes precedence
+    if path != DEFAULT_CONFIG_PATH:
+        cfg = Settings.load(path)
+    else:
+        cfg_path = path
+        # Environment variable to override location
+        env = os.getenv("FILE_SORTER_CONFIG")
+        if env:
+            cfg_path = pathlib.Path(env).expanduser()
+        elif not cfg_path.exists():
+            local = pathlib.Path.cwd() / "config.toml"
+            if local.exists():
+                cfg_path = local
+        cfg = Settings.load(cfg_path)
+
+    if not cfg.classification:
+        cfg.classification = {
+            k: ClassificationRule(**v) if not isinstance(v, ClassificationRule) else v
+            for k, v in DEFAULT_RULES.items()
+        }
+    return cfg
 
 
 # Default classification rules used when no config is provided
