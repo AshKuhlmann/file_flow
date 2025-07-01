@@ -10,7 +10,7 @@ File-Sorter automatically organizes messy download folders. Point it at a direct
 
 ## Installation
 ```bash
-pip install file-sorter
+pip install file-flow
 ```
 
 ## Basic Usage
