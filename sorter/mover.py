@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import json
+import logging
 import pathlib
 import shutil
 import time
 from typing import Any, Sequence, TYPE_CHECKING
 
 from .utils import sha256sum
+
+log = logging.getLogger(__name__)
 
 if TYPE_CHECKING:  # pragma: no cover - typing support
     from rich.progress import Progress
@@ -71,8 +74,10 @@ def move_with_log(
                 + "\n"
             )
             shutil.move(src, dst)
+            log.info("moved %s -> %s", src, dst)
             if progress and task_id is not None:
                 progress.update(task_id, advance=1)
     if progress:
         progress.stop()
+    log.info("log file written to %s", log_path)
     return log_path
