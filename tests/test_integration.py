@@ -38,21 +38,21 @@ def test_move_command_with_classification(tmp_path):
     create_dummy_file(source_dir / "image.jpg")
     create_dummy_file(source_dir / "document.pdf")
 
-    result = run_cli([
-        "move",
-        str(source_dir),
-        "--dest",
-        str(dest_dir),
-        "--no-dry-run",
-        "--yes",
-    ])
+    result = run_cli(
+        [
+            "move",
+            str(source_dir),
+            "--dest",
+            str(dest_dir),
+            "--no-dry-run",
+            "--yes",
+        ]
+    )
 
     assert result.exit_code == 0
     assert not (source_dir / "image.jpg").exists()
     assert not (source_dir / "document.pdf").exists()
-    assert (
-        dest_dir / "Pictures" / f"{source_dir.name}_2025-06-30_image.jpg"
-    ).exists()
+    assert (dest_dir / "Pictures" / f"{source_dir.name}_2025-06-30_image.jpg").exists()
     assert (
         dest_dir / "Documents" / f"{source_dir.name}_2025-06-30_document.pdf"
     ).exists()
@@ -101,14 +101,16 @@ def test_undo_command(tmp_path):
         lf.unlink()
 
     # First, move the file
-    result_move = run_cli([
-        "move",
-        str(source_dir),
-        "--dest",
-        str(dest_dir),
-        "--no-dry-run",
-        "--yes",
-    ])
+    result_move = run_cli(
+        [
+            "move",
+            str(source_dir),
+            "--dest",
+            str(dest_dir),
+            "--no-dry-run",
+            "--yes",
+        ]
+    )
     assert result_move.exit_code == 0
 
     # Find the log file
@@ -131,17 +133,39 @@ def test_move_with_custom_pattern(tmp_path):
     create_dummy_file(source_dir / "pattern_test.txt")
 
     pattern = "{stem}_{date}{ext}"
-    result = run_cli([
-        "move",
-        str(source_dir),
-        "--dest",
-        str(dest_dir),
-        "--pattern",
-        pattern,
-        "--no-dry-run",
-        "--yes",
-    ])
+    result = run_cli(
+        [
+            "move",
+            str(source_dir),
+            "--dest",
+            str(dest_dir),
+            "--pattern",
+            pattern,
+            "--no-dry-run",
+            "--yes",
+        ]
+    )
 
     assert result.exit_code == 0
     moved_file = dest_dir / "Documents" / "pattern-test_2025-06-30.txt"
     assert moved_file.exists()
+
+
+def test_full_sort_operation(tmp_path):
+    """Integrated workflow without using the CLI."""
+    from sorter.planner import plan_moves
+    from sorter.mover import move_with_log
+
+    src = tmp_path / "src"
+    dst = tmp_path / "dst"
+    src.mkdir()
+    dst.mkdir()
+    (src / "image1.jpg").write_text("x")
+    (src / "report.pdf").write_text("x")
+
+    mapping = plan_moves([src], dst)
+    move_with_log(mapping, show_progress=False, log_path=tmp_path / "log.jsonl")
+
+    for original, target in mapping:
+        assert not original.exists()
+        assert target.exists()
