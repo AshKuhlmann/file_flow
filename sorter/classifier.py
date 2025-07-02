@@ -41,8 +41,10 @@ def classify(
     # 1. Check for a match in the classification rules (by extension or mimetype)
     for category, rules in classification_rules.items():
         if path.suffix.lower() in rules.get("extensions", []):
+            log.debug("extension rule match for %s -> %s", path.name, category)
             return category
         if _matches_mimetype(path, rules.get("mimetypes", [])):
+            log.debug("mimetype rule match for %s -> %s", path.name, category)
             return category
 
     # 2. Fallback to a generic category based on the major mimetype
@@ -65,13 +67,15 @@ def _get_generic_category(path: pathlib.Path) -> Optional[str]:
     try:
         mime = magic.from_file(path.as_posix(), mime=True)
         major, _, _ = mime.partition("/")
-        return {
+        category = {
             "video": "Videos",
             "audio": "Audio",
             "image": "Pictures",
             "text": "Documents",
             "application": "Documents",
         }.get(major)
+        log.debug("mime %s -> generic category %s", mime, category)
+        return category
     except Exception:
         return None
 
@@ -84,12 +88,14 @@ def classify_file(path: pathlib.Path) -> str:
         category = supervised.predict_category(path)
         if category:
             log.info("(Predicted: %s)", category)
+            log.debug("final category from supervised model: %s", category)
             return category
 
     # 2. Explicit rules from user config
     config = load_config()
     rule_category = classify(path, config)
     if rule_category:
+        log.debug("final category from rule-based rules: %s", rule_category)
         return rule_category
 
     # 3. Clustering model fallback using stored labels (optional)
@@ -100,9 +106,17 @@ def classify_file(path: pathlib.Path) -> str:
                 with open(clustering.LABELS_PATH) as f:
                     labels: dict[str, str] = json.load(f)
                 if str(cluster_id) in labels:
-                    return labels[str(cluster_id)]
+                    label = labels[str(cluster_id)]
+                    log.debug(
+                        "final category from cluster label %s: %s",
+                        cluster_id,
+                        label,
+                    )
+                    return label
             except Exception:
                 pass
 
     # 4. Final fallback using basic logic
-    return rule_category or "Unsorted"
+    final = rule_category or "Unsorted"
+    log.debug("final category from fallback: %s", final)
+    return final
