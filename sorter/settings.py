@@ -27,4 +27,10 @@ class Settings(BaseSettings):
 
 
 # Instantiate a single settings object for the app to import
-settings = Settings()
+# Explicitly pass defaults so mypy recognizes the provided values.
+settings = Settings(
+    source_dir=None,
+    destination_dir=None,
+    log_file=None,
+    dry_run=False,
+)
