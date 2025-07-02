@@ -67,4 +67,4 @@ ignore_missing_imports = true
 
 [tool.poetry.scripts]
 file-sorter-gui = "sorter_gui.app:main"
-file-sorter = "sorter.cli:app"
+file-sorter = "sorter.cli:main"
