@@ -1,10 +1,8 @@
-import importlib
-import pkgutil
+import importlib.metadata
 import pathlib
 import logging
-from typing import Dict, Any, Optional, List, Union
+from typing import Any, Dict, List, Optional, Union
 
-import sorter.plugins
 from sorter.plugins.base import RenamerPlugin
 from .config import Settings
 
@@ -24,25 +22,28 @@ class PluginManager:
         self.renamer_plugins: List[RenamerPlugin] = self._load_plugins()
 
     def _load_plugins(self) -> List[RenamerPlugin]:
-        """Dynamically loads all plugins that inherit from RenamerPlugin."""
+        """Discover and instantiate enabled renamer plugins."""
         loaded: List[RenamerPlugin] = []
-        for _, name, _ in pkgutil.iter_modules(sorter.plugins.__path__):
-            if name == "base":
-                continue
+
+        try:
+            entry_points = importlib.metadata.entry_points(group="file_flow.renamers")
+        except AttributeError:  # pragma: no cover - older Python
+            entry_points = [
+                ep
+                for ep in importlib.metadata.entry_points()
+                if ep.group == "file_flow.renamers"
+            ]
+
+        for ep in entry_points:
+            name = ep.name
             log.debug("checking plugin: %s", name)
+            cfg = self.plugin_config.get(name, {})
             try:
-                module = importlib.import_module(f"sorter.plugins.{name}")
-            except ImportError as exc:
-                # pragma: no cover - optional plugin deps missing
-                log.error("failed to import plugin %s: %s", name, exc)
+                plugin_class = ep.load()
+                plugin_instance = plugin_class(cfg)
+            except Exception as exc:  # pragma: no cover - plugin error isolation
+                log.error("failed to load plugin %s: %s", name, exc)
                 continue
-
-            if not hasattr(module, "Plugin"):
-                log.debug("plugin %s has no Plugin class", name)
-                continue
-
-            plugin_config = self.plugin_config.get(name, {})
-            plugin_instance = module.Plugin(plugin_config)
 
             if not isinstance(plugin_instance, RenamerPlugin):
                 log.debug("plugin %s is not a RenamerPlugin", name)
@@ -54,12 +55,13 @@ class PluginManager:
 
             loaded.append(plugin_instance)
             log.debug("loaded plugin: %s", name)
+
         return loaded
 
     def rename_with_plugin(self, source_path: pathlib.Path) -> Optional[str]:
         """Tries to rename a file using the first successful plugin."""
         for plugin in self.renamer_plugins:
-            plugin_name = plugin.__class__.__module__.split(".")[-1]
+            plugin_name = plugin.name
             log.debug("trying plugin %s for %s", plugin_name, source_path)
             try:
                 new_stem = plugin.rename(source_path)
