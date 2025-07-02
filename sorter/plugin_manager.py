@@ -62,6 +62,11 @@ class PluginManager:
             log.debug("trying plugin %s for %s", plugin_name, source_path)
             new_stem = plugin.rename(source_path)
             if new_stem:
-                log.debug("plugin %s renamed %s -> %s", plugin_name, source_path, new_stem)
+                log.debug(
+                    "plugin %s renamed %s -> %s",
+                    plugin_name,
+                    source_path,
+                    new_stem,
+                )
                 return new_stem
         return None
