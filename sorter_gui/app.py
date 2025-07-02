@@ -22,7 +22,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from sorter import build_report, move_with_log, rollback, plan_moves
+from sorter import build_report, move_with_log, plan_moves
+from sorter.rollback import rollback
 
 
 class WorkerSignals(QObject):  # type: ignore[misc]

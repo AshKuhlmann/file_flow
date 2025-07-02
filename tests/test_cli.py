@@ -1,6 +1,4 @@
-from typer.testing import CliRunner
-
-from sorter import app
+from conftest import run_cli
 from sorter.config import Settings
 
 
@@ -18,9 +16,7 @@ def test_dupes_command(tmp_path, monkeypatch):
         "sorter.cli.find_duplicates",
         lambda files, *, algorithm="sha256": {"deadbeef": [a, b]},
     )
-
-    runner = CliRunner()
-    result = runner.invoke(app, ["dupes", str(tmp_path)])
+    result = run_cli(["dupes", str(tmp_path)])
     assert result.exit_code == 0
     assert "deadbeef"[:8] in result.stdout
 
@@ -37,9 +33,7 @@ def test_dupes_algorithm_option(tmp_path, monkeypatch):
 
     monkeypatch.setattr("sorter.cli.scan_paths", fake_scan)
     monkeypatch.setattr("sorter.cli.find_duplicates", fake_find)
-
-    runner = CliRunner()
-    result = runner.invoke(app, ["dupes", str(tmp_path), "--algorithm", "md5"])
+    result = run_cli(["dupes", str(tmp_path), "--algorithm", "md5"])
     assert result.exit_code == 0
     assert calls["alg"] == "md5"
 
@@ -55,13 +49,15 @@ def test_schedule_command(tmp_path, monkeypatch):
 
     monkeypatch.setattr("sorter.scheduler.validate_cron", fake_validate)
     monkeypatch.setattr("sorter.scheduler.install_job", fake_install)
-
-    runner = CliRunner()
     dest = tmp_path / "dest"
-    result = runner.invoke(
-        app,
-        ["schedule", str(tmp_path), "--dest", str(dest), "--cron", "5 4 * * *"],
-    )
+    result = run_cli([
+        "schedule",
+        str(tmp_path),
+        "--dest",
+        str(dest),
+        "--cron",
+        "5 4 * * *",
+    ])
     assert result.exit_code == 0
     assert calls["validate"] == "5 4 * * *"
     assert calls["install"] == ("5 4 * * *", [tmp_path], dest)
@@ -78,17 +74,14 @@ def test_stats_command(tmp_path, monkeypatch):
         return dest
 
     monkeypatch.setattr("sorter.stats.build_dashboard", fake_dash)
-
-    runner = CliRunner()
-    result = runner.invoke(app, ["stats", str(tmp_path), "--out", str(dest)])
+    result = run_cli(["stats", str(tmp_path), "--out", str(dest)])
     assert result.exit_code == 0
     assert calls["dash"] == ([log], dest)
 
 
 def test_scan_smoke(tmp_path):
     (tmp_path / "a.txt").write_text("x")
-    runner = CliRunner()
-    result = runner.invoke(app, ["scan", str(tmp_path)])
+    result = run_cli(["scan", str(tmp_path)])
     assert result.exit_code == 0
     assert "1" in result.stdout
 
@@ -99,8 +92,7 @@ def test_move_dry_run(tmp_path, monkeypatch):
         "sorter.cli.build_report", lambda *a, **k: tmp_path / "rep.xlsx"
     )
     dest = tmp_path / "dest"
-    runner = CliRunner()
-    result = runner.invoke(app, ["move", str(tmp_path), "--dest", str(dest)])
+    result = run_cli(["move", str(tmp_path), "--dest", str(dest)])
     assert result.exit_code == 0
     assert "Dry-run" in result.stdout
 
@@ -119,17 +111,20 @@ def test_move_custom_pattern(tmp_path, monkeypatch):
 
     monkeypatch.setattr("sorter.planner.generate_name", fake_gen)
     dest = tmp_path / "dest"
-    runner = CliRunner()
-    result = runner.invoke(
-        app, ["move", str(tmp_path), "--dest", str(dest), "--pattern", "{stem}{ext}"]
-    )
+    result = run_cli([
+        "move",
+        str(tmp_path),
+        "--dest",
+        str(dest),
+        "--pattern",
+        "{stem}{ext}",
+    ])
     assert result.exit_code == 0
     assert captured["pattern"] == "{stem}{ext}"
 
 
 def test_stats_no_logs(tmp_path):
-    runner = CliRunner()
-    result = runner.invoke(app, ["stats", str(tmp_path)])
+    result = run_cli(["stats", str(tmp_path)])
     assert result.exit_code == 1
     assert "No log files found." in result.stdout
 
@@ -158,19 +153,14 @@ def test_move_destination_exists(tmp_path, monkeypatch):
     monkeypatch.setattr(
         "sorter.cli.build_report", lambda *a, **k: tmp_path / "rep.xlsx"
     )
-
-    runner = CliRunner()
-    result = runner.invoke(
-        app,
-        [
-            "move",
-            str(tmp_path),
-            "--dest",
-            str(dest_root),
-            "--no-dry-run",
-            "--yes",
-        ],
-    )
+    result = run_cli([
+        "move",
+        str(tmp_path),
+        "--dest",
+        str(dest_root),
+        "--no-dry-run",
+        "--yes",
+    ])
     assert result.exit_code == 1
     assert "destination already exists" in result.stdout
 
@@ -192,44 +182,36 @@ def test_report_format_option(tmp_path, monkeypatch):
         return tmp_path / f"rep.{fmt}"
 
     monkeypatch.setattr("sorter.cli.build_report", fake_build_report)
-
-    runner = CliRunner()
-    result = runner.invoke(app, ["report", str(tmp_path), "--format", "json"])
+    result = run_cli(["report", str(tmp_path), "--format", "json"])
     assert result.exit_code == 0
     assert captured["fmt"] == "json"
 
 
 def test_version_option():
-    runner = CliRunner()
-    result = runner.invoke(app, ["--version"])
+    result = run_cli(["--version"])
     assert result.exit_code == 0
     assert "1.0.0" in result.stdout
 
 
 def test_scan_invalid_directory():
-    runner = CliRunner()
-    result = runner.invoke(app, ["scan", "/nonexistent"])
+    result = run_cli(["scan", "/nonexistent"])
     assert result.exit_code != 0
-    assert "does not exist" in (result.stderr or result.output)
+    assert "does not exist" in result.stdout
 
 
 def test_move_invalid_pattern(tmp_path):
     (tmp_path / "file.txt").write_text("x")
     dest = tmp_path / "dest"
-    runner = CliRunner()
-    result = runner.invoke(
-        app,
-        [
-            "move",
-            str(tmp_path),
-            "--dest",
-            str(dest),
-            "--pattern",
-            "{foo}",
-            "--no-dry-run",
-            "--yes",
-        ],
-    )
+    result = run_cli([
+        "move",
+        str(tmp_path),
+        "--dest",
+        str(dest),
+        "--pattern",
+        "{foo}",
+        "--no-dry-run",
+        "--yes",
+    ])
     assert result.exit_code != 0
 
 
@@ -238,8 +220,7 @@ def test_scan_permission_denied(monkeypatch, tmp_path):
         "sorter.cli.scan_paths",
         lambda dirs: (_ for _ in ()).throw(PermissionError("denied")),
     )
-    runner = CliRunner()
-    result = runner.invoke(app, ["scan", str(tmp_path)])
+    result = run_cli(["scan", str(tmp_path)])
     assert result.exit_code == 1
 
 
@@ -259,16 +240,12 @@ def test_move_permission_denied(monkeypatch, tmp_path):
         "sorter.cli.move_with_log",
         lambda *a, **k: (_ for _ in ()).throw(PermissionError("denied")),
     )
-    runner = CliRunner()
-    result = runner.invoke(
-        app,
-        [
-            "move",
-            str(tmp_path),
-            "--dest",
-            str(dest),
-            "--no-dry-run",
-            "--yes",
-        ],
-    )
+    result = run_cli([
+        "move",
+        str(tmp_path),
+        "--dest",
+        str(dest),
+        "--no-dry-run",
+        "--yes",
+    ])
     assert result.exit_code == 1

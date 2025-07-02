@@ -26,7 +26,8 @@ _EXPORTS: Dict[str, Tuple[str, str]] = {
     "plan_moves": ("planner", "plan_moves"),
     "rollback": ("rollback", "rollback"),
     "build_dashboard": ("stats", "build_dashboard"),
-    "app": ("cli", "app"),
+    "get_parser": ("cli", "get_parser"),
+    "main": ("cli", "main"),
 }
 
 
@@ -57,6 +58,7 @@ __all__ = [
     "find_duplicates",
     "rollback",
     "build_dashboard",
-    "app",
+    "get_parser",
+    "main",
     "__version__",
 ]

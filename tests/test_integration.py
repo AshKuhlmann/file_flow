@@ -1,9 +1,8 @@
 import pathlib
-from typer.testing import CliRunner
 import os
 import datetime as _dt
 
-from sorter import app
+from conftest import run_cli
 
 
 # Helper function to create dummy files
@@ -19,15 +18,11 @@ def create_dummy_file(path: pathlib.Path, content: str = "dummy content"):
 
 def test_move_command_dry_run(tmp_path):
     """Tests the 'move' command with --dry-run to ensure no files are actually moved."""
-    runner = CliRunner()
     source_dir = tmp_path / "source"
     dest_dir = tmp_path / "destination"
     create_dummy_file(source_dir / "test_file.txt")
 
-    result = runner.invoke(
-        app,
-        ["move", str(source_dir), "--dest", str(dest_dir), "--dry-run"],
-    )
+    result = run_cli(["move", str(source_dir), "--dest", str(dest_dir), "--dry-run"])
 
     assert result.exit_code == 0
     assert "Dry-run complete" in result.stdout
@@ -38,16 +33,19 @@ def test_move_command_dry_run(tmp_path):
 def test_move_command_with_classification(tmp_path):
     """Tests the 'move' command to ensure files are classified and moved to
     the correct subdirectories."""
-    runner = CliRunner()
     source_dir = tmp_path / "source"
     dest_dir = tmp_path / "destination"
     create_dummy_file(source_dir / "image.jpg")
     create_dummy_file(source_dir / "document.pdf")
 
-    result = runner.invoke(
-        app,
-        ["move", str(source_dir), "--dest", str(dest_dir), "--no-dry-run", "--yes"],
-    )
+    result = run_cli([
+        "move",
+        str(source_dir),
+        "--dest",
+        str(dest_dir),
+        "--no-dry-run",
+        "--yes",
+    ])
 
     assert result.exit_code == 0
     assert not (source_dir / "image.jpg").exists()
@@ -62,13 +60,12 @@ def test_move_command_with_classification(tmp_path):
 
 def test_dupes_command(tmp_path):
     """Tests the 'dupes' command to ensure it correctly identifies duplicate files."""
-    runner = CliRunner()
     source_dir = tmp_path / "source"
     create_dummy_file(source_dir / "file1.txt", "same content")
     create_dummy_file(source_dir / "file2.txt", "same content")
     create_dummy_file(source_dir / "file3.txt", "different content")
 
-    result = runner.invoke(app, ["dupes", str(source_dir)])
+    result = run_cli(["dupes", str(source_dir)])
 
     assert result.exit_code == 0
     assert "Found group with hash" in result.stdout
@@ -79,12 +76,11 @@ def test_dupes_command(tmp_path):
 
 def test_report_command(tmp_path):
     """Tests the 'report' command to ensure it generates a report of proposed moves."""
-    runner = CliRunner()
     source_dir = tmp_path / "source"
     dest_dir = tmp_path / "destination"
     create_dummy_file(source_dir / "report_file.txt")
 
-    result = runner.invoke(app, ["report", str(source_dir), "--dest", str(dest_dir)])
+    result = run_cli(["report", str(source_dir), "--dest", str(dest_dir)])
 
     assert result.exit_code == 0
     assert "Report ready" in result.stdout
@@ -95,7 +91,6 @@ def test_report_command(tmp_path):
 
 def test_undo_command(tmp_path):
     """Tests the 'undo' command to ensure it can roll back a move operation."""
-    runner = CliRunner()
     source_dir = tmp_path / "source"
     dest_dir = tmp_path / "destination"
     test_file = source_dir / "undo_test.txt"
@@ -106,17 +101,21 @@ def test_undo_command(tmp_path):
         lf.unlink()
 
     # First, move the file
-    result_move = runner.invoke(
-        app,
-        ["move", str(source_dir), "--dest", str(dest_dir), "--no-dry-run", "--yes"],
-    )
+    result_move = run_cli([
+        "move",
+        str(source_dir),
+        "--dest",
+        str(dest_dir),
+        "--no-dry-run",
+        "--yes",
+    ])
     assert result_move.exit_code == 0
 
     # Find the log file
     log_file = next(pathlib.Path.cwd().glob("file-sort-log_*.jsonl"))
 
     # Now, undo the move
-    result_undo = runner.invoke(app, ["undo", str(log_file)])
+    result_undo = run_cli(["undo", str(log_file)])
     assert result_undo.exit_code == 0
     assert "Rollback complete" in result_undo.stdout
     assert test_file.exists()
@@ -127,17 +126,20 @@ def test_undo_command(tmp_path):
 
 def test_move_with_custom_pattern(tmp_path):
     """Tests the 'move' command with a custom naming pattern."""
-    runner = CliRunner()
     source_dir = tmp_path / "source"
     dest_dir = tmp_path / "destination"
     create_dummy_file(source_dir / "pattern_test.txt")
 
     pattern = "{stem}_{date}{ext}"
-    result = runner.invoke(app, [
-        "move", str(source_dir),
-        "--dest", str(dest_dir),
-        "--pattern", pattern,
-        "--no-dry-run", "--yes"
+    result = run_cli([
+        "move",
+        str(source_dir),
+        "--dest",
+        str(dest_dir),
+        "--pattern",
+        pattern,
+        "--no-dry-run",
+        "--yes",
     ])
 
     assert result.exit_code == 0
