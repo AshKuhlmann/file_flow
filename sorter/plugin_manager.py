@@ -32,7 +32,8 @@ class PluginManager:
             log.debug("checking plugin: %s", name)
             try:
                 module = importlib.import_module(f"sorter.plugins.{name}")
-            except ImportError as exc:  # pragma: no cover - optional plugin deps missing
+            except ImportError as exc:
+                # pragma: no cover - optional plugin deps missing
                 log.error("failed to import plugin %s: %s", name, exc)
                 continue
 

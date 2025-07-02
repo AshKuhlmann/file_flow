@@ -80,7 +80,7 @@ def move_with_log(
                 raise
             except PermissionError:
                 log.error(
-                    "Permission denied while moving %s to %s. Check folder permissions.",
+                    "Permission denied moving %s to %s. Check folder permissions.",
                     src,
                     dst,
                 )
