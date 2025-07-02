@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import datetime as _dt
 import pathlib
+import logging
 from typing import Final, Iterable, Pattern
+
+log = logging.getLogger(__name__)
 
 try:
     from slugify import slugify as _slugify  # type: ignore
@@ -63,12 +66,19 @@ def generate_name(
     target_dir = target_dir.expanduser().resolve()
     target_dir.mkdir(parents=True, exist_ok=True)
 
-    if pattern:
-        name = _get_name_from_pattern(src, pattern, include_parent, date_from_mtime)
-    else:
-        name = _get_default_name(src, include_parent, date_from_mtime)
+    tokens = _build_tokens(src, include_parent, date_from_mtime)
+    log.debug("name tokens: %s", tokens)
 
-    return _resolve_collisions(target_dir, name)
+    if pattern:
+        name = pattern.format(**tokens)
+    else:
+        pieces = [p for p in (tokens["parent"], tokens["date"], tokens["stem"]) if p]
+        stem = "_".join(pieces)
+        name = f"{stem}{tokens['ext']}"
+
+    resolved = _resolve_collisions(target_dir, name)
+    log.debug("resolved path: %s", resolved)
+    return resolved
 
 
 def _build_tokens(
@@ -127,7 +137,10 @@ def _resolve_collisions(target_dir: pathlib.Path, name: str) -> pathlib.Path:
     counter = 2
     existing = {p.name.lower() for p in target_dir.iterdir()}
     while candidate.name.lower() in existing:
-        candidate = target_dir / f"{stem}__{counter}{ext}"
+        new_name = f"{stem}__{counter}{ext}"
+        log.debug("collision for %s, trying %s", candidate.name, new_name)
+        candidate = target_dir / new_name
         counter += 1
-
-    return candidate.resolve()
+    result = candidate.resolve()
+    log.debug("collision-free path: %s", result)
+    return result
