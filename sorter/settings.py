@@ -14,8 +14,12 @@ class Settings(BaseSettings):
         case_sensitive=False,
     )
 
-    source_dir: Optional[Path] = Field(None, description="Default source directory to scan.")
-    destination_dir: Optional[Path] = Field(None, description="Default destination for sorted files.")
+    source_dir: Optional[Path] = Field(
+        None, description="Default source directory to scan."
+    )
+    destination_dir: Optional[Path] = Field(
+        None, description="Default destination for sorted files."
+    )
     log_file: Optional[Path] = Field(None, description="Path to write logs to.")
     dry_run: bool = False
 
