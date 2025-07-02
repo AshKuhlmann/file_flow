@@ -4,6 +4,7 @@ import os
 from typing import Optional
 
 from pydantic import BaseModel, Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 DEFAULT_CONFIG_PATH = pathlib.Path.home() / ".file-sorter" / "config.toml"
@@ -19,14 +20,18 @@ class PluginConfig(BaseModel):
     pattern: str = ""
 
 
-class Settings(BaseModel):
+class Settings(BaseSettings):
+    """Application configuration loaded from file, env vars and defaults."""
+
+    model_config = SettingsConfigDict(
+        env_prefix="FILEFLOW_",
+        case_sensitive=False,
+        extra="allow",
+    )
+
     fallback_category: Optional[str] = "Other"
     classification: dict[str, ClassificationRule] = Field(default_factory=dict)
     plugins: dict[str, PluginConfig] = Field(default_factory=dict)
-
-    model_config = {
-        "extra": "allow",
-    }
 
     @classmethod
     def load(cls, path: pathlib.Path = DEFAULT_CONFIG_PATH) -> "Settings":
@@ -34,7 +39,13 @@ class Settings(BaseModel):
             return cls()
         with path.open("rb") as fp:
             data = tomllib.load(fp)
-        return cls.model_validate(data)
+
+        env_settings = cls()
+        merged = env_settings.model_dump()
+        for key, value in data.items():
+            if key not in env_settings.model_fields_set:
+                merged[key] = value
+        return cls(**merged)
 
 
 def load_config(path: pathlib.Path = DEFAULT_CONFIG_PATH) -> Settings:
@@ -45,7 +56,7 @@ def load_config(path: pathlib.Path = DEFAULT_CONFIG_PATH) -> Settings:
     else:
         cfg_path = path
         # Environment variable to override location
-        env = os.getenv("FILE_SORTER_CONFIG")
+        env = os.getenv("FILEFLOW_CONFIG")
         if env:
             cfg_path = pathlib.Path(env).expanduser()
         elif not cfg_path.exists():

@@ -12,6 +12,7 @@ from .mover import move_with_log
 from .planner import plan_moves
 from .dupes import find_duplicates, delete_older as _delete_older
 from .cli_utils import handle_cli_errors
+from .settings import settings, Settings
 
 log = logging.getLogger(__name__)
 
@@ -20,8 +21,9 @@ log = logging.getLogger(__name__)
 # Command handlers
 # ---------------------------------------------------------------------------
 
+
 @handle_cli_errors
-def handle_scan(args: argparse.Namespace) -> None:
+def handle_scan(args: argparse.Namespace, cfg: Settings) -> None:
     dirs = [p.resolve() for p in args.dirs]
     for d in dirs:
         if not d.exists():
@@ -35,7 +37,7 @@ def handle_scan(args: argparse.Namespace) -> None:
 
 
 @handle_cli_errors
-def handle_report(args: argparse.Namespace) -> None:
+def handle_report(args: argparse.Namespace, cfg: Settings) -> None:
     dirs = [p.resolve() for p in args.dirs]
     for d in dirs:
         if not d.exists():
@@ -50,7 +52,7 @@ def handle_report(args: argparse.Namespace) -> None:
 
 
 @handle_cli_errors
-def handle_review(args: argparse.Namespace) -> None:
+def handle_review(args: argparse.Namespace, cfg: Settings) -> None:
     dirs = [p.resolve() for p in args.dirs]
     for d in dirs:
         if not d.exists():
@@ -70,7 +72,7 @@ def handle_review(args: argparse.Namespace) -> None:
 
 
 @handle_cli_errors
-def handle_move(args: argparse.Namespace) -> None:
+def handle_move(args: argparse.Namespace, cfg: Settings) -> None:
     dirs = [p.resolve() for p in args.dirs]
     for d in dirs:
         if not d.exists():
@@ -102,15 +104,16 @@ def handle_move(args: argparse.Namespace) -> None:
 
 
 @handle_cli_errors
-def handle_undo(args: argparse.Namespace) -> None:
+def handle_undo(args: argparse.Namespace, cfg: Settings) -> None:
     log.debug("Rolling back moves using log %s", args.log_file)
     from .rollback import rollback as _rollback
+
     _rollback(args.log_file)
     log.info("Rollback complete.")
 
 
 @handle_cli_errors
-def handle_dupes(args: argparse.Namespace) -> None:
+def handle_dupes(args: argparse.Namespace, cfg: Settings) -> None:
     dirs = [p.resolve() for p in args.dirs]
     for d in dirs:
         if not d.exists():
@@ -146,8 +149,9 @@ def handle_dupes(args: argparse.Namespace) -> None:
 
 
 @handle_cli_errors
-def handle_schedule(args: argparse.Namespace) -> None:
+def handle_schedule(args: argparse.Namespace, cfg: Settings) -> None:
     from .scheduler import validate_cron, install_job
+
     log.debug(
         "Scheduling job '%s' for dirs: %s",
         args.cron,
@@ -159,21 +163,23 @@ def handle_schedule(args: argparse.Namespace) -> None:
 
 
 @handle_cli_errors
-def handle_stats(args: argparse.Namespace) -> None:
+def handle_stats(args: argparse.Namespace, cfg: Settings) -> None:
     logs = sorted(args.logs_dir.glob("file-sort-log_*.jsonl"))
     if not logs:
         log.error("No log files found.")
         raise FileNotFoundError("No log files found.")
     from .stats import build_dashboard
+
     dash = build_dashboard(logs, dest=args.out)
     log.info("Dashboard written to %s", dash)
     log.debug("Processed %d log files", len(logs))
 
 
 @handle_cli_errors
-def handle_learn_clusters(args: argparse.Namespace) -> None:
+def handle_learn_clusters(args: argparse.Namespace, cfg: Settings) -> None:
     from . import clustering
     import shutil
+
     files = scan_paths([args.source_dir])
     clustered_df = clustering.train_cluster_model(files)
     if clustered_df is None:
@@ -188,8 +194,9 @@ def handle_learn_clusters(args: argparse.Namespace) -> None:
 
 
 @handle_cli_errors
-def handle_train(args: argparse.Namespace) -> None:
+def handle_train(args: argparse.Namespace, cfg: Settings) -> None:
     from . import supervised
+
     log.debug("Training classifier using logs in %s", args.logs_dir)
     supervised.train_supervised_model(args.logs_dir)
 
@@ -198,10 +205,9 @@ def handle_train(args: argparse.Namespace) -> None:
 # Argument parser
 # ---------------------------------------------------------------------------
 
+
 def get_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        description="A smart file sorter and organizer."
-    )
+    parser = argparse.ArgumentParser(description="A smart file sorter and organizer.")
     parser.add_argument(
         "-v",
         "--verbose",
@@ -222,9 +228,7 @@ def get_parser() -> argparse.ArgumentParser:
     sp.set_defaults(func=handle_scan)
 
     # report
-    sp = subparsers.add_parser(
-        "report", help="Generate a report of proposed moves."
-    )
+    sp = subparsers.add_parser("report", help="Generate a report of proposed moves.")
     sp.add_argument("dirs", nargs="+", type=pathlib.Path)
     sp.add_argument("--dest", type=pathlib.Path, default=None)
     sp.add_argument("--pattern", type=str, default=None)
@@ -272,9 +276,7 @@ def get_parser() -> argparse.ArgumentParser:
     sp.set_defaults(func=handle_schedule)
 
     # stats
-    sp = subparsers.add_parser(
-        "stats", help="Generate HTML dashboard from move logs."
-    )
+    sp = subparsers.add_parser("stats", help="Generate HTML dashboard from move logs.")
     sp.add_argument("logs_dir", type=pathlib.Path)
     sp.add_argument("--out", type=pathlib.Path, default=None)
     sp.set_defaults(func=handle_stats)
@@ -287,9 +289,7 @@ def get_parser() -> argparse.ArgumentParser:
     sp.set_defaults(func=handle_learn_clusters)
 
     # train
-    sp = subparsers.add_parser(
-        "train", help="Train a classifier from move history."
-    )
+    sp = subparsers.add_parser("train", help="Train a classifier from move history.")
     sp.add_argument("logs_dir", type=pathlib.Path, default=pathlib.Path.cwd())
     sp.set_defaults(func=handle_train)
 
@@ -299,6 +299,7 @@ def get_parser() -> argparse.ArgumentParser:
 # ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
+
 
 def main(argv: Iterable[str] | None = None) -> None:
     parser = get_parser()
@@ -310,7 +311,9 @@ def main(argv: Iterable[str] | None = None) -> None:
     else:
         log.debug("Logging level: %s", logging.getLevelName(log_level))
     if hasattr(args, "func"):
-        args.func(args)
+        if hasattr(args, "dry_run"):
+            settings.dry_run = args.dry_run
+        args.func(args, settings)
     else:
         parser.print_help()
 
