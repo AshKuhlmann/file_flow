@@ -38,4 +38,3 @@ def handle_cli_errors(func):
         raise SystemExit(1)
 
     return wrapper
-

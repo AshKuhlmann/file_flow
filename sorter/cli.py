@@ -222,7 +222,9 @@ def get_parser() -> argparse.ArgumentParser:
     sp.set_defaults(func=handle_scan)
 
     # report
-    sp = subparsers.add_parser("report", help="Generate a report describing proposed moves.")
+    sp = subparsers.add_parser(
+        "report", help="Generate a report of proposed moves."
+    )
     sp.add_argument("dirs", nargs="+", type=pathlib.Path)
     sp.add_argument("--dest", type=pathlib.Path, default=None)
     sp.add_argument("--pattern", type=str, default=None)
@@ -231,7 +233,9 @@ def get_parser() -> argparse.ArgumentParser:
     sp.set_defaults(func=handle_report)
 
     # review
-    sp = subparsers.add_parser("review", help="Add files to review queue and list any due today.")
+    sp = subparsers.add_parser(
+        "review", help="Queue files for review and list due items."
+    )
     sp.add_argument("dirs", nargs="+", type=pathlib.Path)
     sp.set_defaults(func=handle_review)
 
@@ -259,25 +263,33 @@ def get_parser() -> argparse.ArgumentParser:
     sp.set_defaults(func=handle_dupes)
 
     # schedule
-    sp = subparsers.add_parser("schedule", help="Install nightly dry-run that emails report.")
+    sp = subparsers.add_parser(
+        "schedule", help="Install nightly dry-run job to email report."
+    )
     sp.add_argument("dirs", nargs="+", type=pathlib.Path)
     sp.add_argument("--dest", type=pathlib.Path, required=True)
     sp.add_argument("--cron", default="0 3 * * *")
     sp.set_defaults(func=handle_schedule)
 
     # stats
-    sp = subparsers.add_parser("stats", help="Generate HTML analytics dashboard from move logs.")
+    sp = subparsers.add_parser(
+        "stats", help="Generate HTML dashboard from move logs."
+    )
     sp.add_argument("logs_dir", type=pathlib.Path)
     sp.add_argument("--out", type=pathlib.Path, default=None)
     sp.set_defaults(func=handle_stats)
 
     # learn-clusters
-    sp = subparsers.add_parser("learn-clusters", help="Analyze a directory to discover file categories.")
+    sp = subparsers.add_parser(
+        "learn-clusters", help="Analyze a directory to discover categories."
+    )
     sp.add_argument("source_dir", type=pathlib.Path)
     sp.set_defaults(func=handle_learn_clusters)
 
     # train
-    sp = subparsers.add_parser("train", help="Train a personalized classifier from move history.")
+    sp = subparsers.add_parser(
+        "train", help="Train a classifier from move history."
+    )
     sp.add_argument("logs_dir", type=pathlib.Path, default=pathlib.Path.cwd())
     sp.set_defaults(func=handle_train)
 

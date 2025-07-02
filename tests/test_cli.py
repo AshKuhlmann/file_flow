@@ -50,7 +50,14 @@ def test_schedule_command(tmp_path, monkeypatch):
     monkeypatch.setattr("sorter.scheduler.validate_cron", fake_validate)
     monkeypatch.setattr("sorter.scheduler.install_job", fake_install)
     dest = tmp_path / "dest"
-    result = run_cli(["schedule", str(tmp_path), "--dest", str(dest), "--cron", "5 4 * * *"])
+    result = run_cli([
+        "schedule",
+        str(tmp_path),
+        "--dest",
+        str(dest),
+        "--cron",
+        "5 4 * * *",
+    ])
     assert result.exit_code == 0
     assert calls["validate"] == "5 4 * * *"
     assert calls["install"] == ("5 4 * * *", [tmp_path], dest)

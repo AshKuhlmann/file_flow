@@ -6,7 +6,7 @@ from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from sorter.cli import main
+from sorter.cli import main  # noqa: E402
 
 
 def run_cli(args):
