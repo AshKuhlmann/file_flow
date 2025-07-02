@@ -73,8 +73,29 @@ def move_with_log(
                 )
                 + "\n"
             )
-            shutil.move(src, dst)
-            log.info("moved %s -> %s", src, dst)
+            try:
+                shutil.move(src, dst)
+            except FileNotFoundError:
+                log.error("Source file not found: %s", src)
+                raise
+            except PermissionError:
+                log.error(
+                    "Permission denied while moving %s to %s. Check folder permissions.",
+                    src,
+                    dst,
+                )
+                raise
+            except shutil.Error as exc:
+                log.error("Error during move to %s: %s", dst, exc)
+                raise
+            except Exception as exc:  # pragma: no cover - defensive
+                log.critical(
+                    "Unexpected error moving %s -> %s: %s", src, dst, exc,
+                    exc_info=True,
+                )
+                raise
+            else:
+                log.info("moved %s -> %s", src, dst)
             if progress and task_id is not None:
                 progress.update(task_id, advance=1)
     if progress:

@@ -11,12 +11,12 @@ import magic  # python-magic
 
 try:  # optional ML modules
     from . import supervised  # type: ignore
-except Exception:  # pragma: no cover - optional dep missing
+except ImportError:  # pragma: no cover - optional dep missing
     supervised = None  # type: ignore
 
 try:
     from . import clustering  # type: ignore
-except Exception:  # pragma: no cover - optional dep missing
+except ImportError:  # pragma: no cover - optional dep missing
     clustering = None  # type: ignore
 from .config import load_config, Settings
 
@@ -58,7 +58,8 @@ def _matches_mimetype(path: pathlib.Path, mimetypes: list[str]) -> bool:
     try:
         mime = magic.from_file(path.as_posix(), mime=True)
         return mime in mimetypes
-    except Exception:
+    except OSError as exc:
+        log.warning("Could not determine mimetype for %s: %s", path, exc)
         return False
 
 
@@ -76,7 +77,8 @@ def _get_generic_category(path: pathlib.Path) -> Optional[str]:
         }.get(major)
         log.debug("mime %s -> generic category %s", mime, category)
         return category
-    except Exception:
+    except OSError as exc:
+        log.warning("Could not inspect file %s: %s", path, exc)
         return None
 
 
@@ -113,8 +115,8 @@ def classify_file(path: pathlib.Path) -> str:
                         label,
                     )
                     return label
-            except Exception:
-                pass
+            except (OSError, json.JSONDecodeError) as exc:
+                log.warning("Could not read cluster labels: %s", exc)
 
     # 4. Final fallback using basic logic
     final = rule_category or "Unsorted"

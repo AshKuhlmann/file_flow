@@ -6,7 +6,7 @@ import io
 
 try:
     import pandas as _pd  # type: ignore[import-untyped]
-except Exception:  # pragma: no cover - optional dep missing
+except ImportError:  # pragma: no cover - optional dep missing
     _pd = None  # type: ignore
 
 
