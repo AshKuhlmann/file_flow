@@ -12,6 +12,7 @@ from .mover import move_with_log
 from .planner import plan_moves
 from .dupes import find_duplicates, delete_older as _delete_older
 from .cli_utils import handle_cli_errors
+from .settings import settings, Settings
 
 log = logging.getLogger(__name__)
 
@@ -21,7 +22,7 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 @handle_cli_errors
-def handle_scan(args: argparse.Namespace) -> None:
+def handle_scan(args: argparse.Namespace, cfg: Settings) -> None:
     dirs = [p.resolve() for p in args.dirs]
     for d in dirs:
         if not d.exists():
@@ -35,7 +36,7 @@ def handle_scan(args: argparse.Namespace) -> None:
 
 
 @handle_cli_errors
-def handle_report(args: argparse.Namespace) -> None:
+def handle_report(args: argparse.Namespace, cfg: Settings) -> None:
     dirs = [p.resolve() for p in args.dirs]
     for d in dirs:
         if not d.exists():
@@ -50,7 +51,7 @@ def handle_report(args: argparse.Namespace) -> None:
 
 
 @handle_cli_errors
-def handle_review(args: argparse.Namespace) -> None:
+def handle_review(args: argparse.Namespace, cfg: Settings) -> None:
     dirs = [p.resolve() for p in args.dirs]
     for d in dirs:
         if not d.exists():
@@ -70,7 +71,7 @@ def handle_review(args: argparse.Namespace) -> None:
 
 
 @handle_cli_errors
-def handle_move(args: argparse.Namespace) -> None:
+def handle_move(args: argparse.Namespace, cfg: Settings) -> None:
     dirs = [p.resolve() for p in args.dirs]
     for d in dirs:
         if not d.exists():
@@ -102,7 +103,7 @@ def handle_move(args: argparse.Namespace) -> None:
 
 
 @handle_cli_errors
-def handle_undo(args: argparse.Namespace) -> None:
+def handle_undo(args: argparse.Namespace, cfg: Settings) -> None:
     log.debug("Rolling back moves using log %s", args.log_file)
     from .rollback import rollback as _rollback
     _rollback(args.log_file)
@@ -110,7 +111,7 @@ def handle_undo(args: argparse.Namespace) -> None:
 
 
 @handle_cli_errors
-def handle_dupes(args: argparse.Namespace) -> None:
+def handle_dupes(args: argparse.Namespace, cfg: Settings) -> None:
     dirs = [p.resolve() for p in args.dirs]
     for d in dirs:
         if not d.exists():
@@ -146,7 +147,7 @@ def handle_dupes(args: argparse.Namespace) -> None:
 
 
 @handle_cli_errors
-def handle_schedule(args: argparse.Namespace) -> None:
+def handle_schedule(args: argparse.Namespace, cfg: Settings) -> None:
     from .scheduler import validate_cron, install_job
     log.debug(
         "Scheduling job '%s' for dirs: %s",
@@ -159,7 +160,7 @@ def handle_schedule(args: argparse.Namespace) -> None:
 
 
 @handle_cli_errors
-def handle_stats(args: argparse.Namespace) -> None:
+def handle_stats(args: argparse.Namespace, cfg: Settings) -> None:
     logs = sorted(args.logs_dir.glob("file-sort-log_*.jsonl"))
     if not logs:
         log.error("No log files found.")
@@ -171,7 +172,7 @@ def handle_stats(args: argparse.Namespace) -> None:
 
 
 @handle_cli_errors
-def handle_learn_clusters(args: argparse.Namespace) -> None:
+def handle_learn_clusters(args: argparse.Namespace, cfg: Settings) -> None:
     from . import clustering
     import shutil
     files = scan_paths([args.source_dir])
@@ -188,7 +189,7 @@ def handle_learn_clusters(args: argparse.Namespace) -> None:
 
 
 @handle_cli_errors
-def handle_train(args: argparse.Namespace) -> None:
+def handle_train(args: argparse.Namespace, cfg: Settings) -> None:
     from . import supervised
     log.debug("Training classifier using logs in %s", args.logs_dir)
     supervised.train_supervised_model(args.logs_dir)
@@ -310,7 +311,9 @@ def main(argv: Iterable[str] | None = None) -> None:
     else:
         log.debug("Logging level: %s", logging.getLevelName(log_level))
     if hasattr(args, "func"):
-        args.func(args)
+        if hasattr(args, "dry_run"):
+            settings.dry_run = args.dry_run
+        args.func(args, settings)
     else:
         parser.print_help()
 

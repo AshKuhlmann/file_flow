@@ -24,6 +24,7 @@ mutagen = "*"
 scikit-learn = "*"
 joblib = "*"
 pydantic = "^2.7.0"
+pydantic-settings = "^2.10.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.11.13"
