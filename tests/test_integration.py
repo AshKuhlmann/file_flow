@@ -2,7 +2,7 @@ import pathlib
 import os
 import datetime as _dt
 
-from tests.conftest import run_cli
+from conftest import run_cli
 
 
 # Helper function to create dummy files

@@ -1,4 +1,4 @@
-from tests.conftest import run_cli
+from conftest import run_cli
 from sorter.config import Settings
 
 
