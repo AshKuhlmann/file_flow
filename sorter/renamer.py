@@ -9,7 +9,7 @@ log = logging.getLogger(__name__)
 
 try:
     from slugify import slugify as _slugify  # type: ignore
-except Exception:  # pragma: no cover - optional dep missing
+except ImportError:  # pragma: no cover - optional dep missing
     import re
 
     def _slugify(

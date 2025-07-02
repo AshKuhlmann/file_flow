@@ -5,16 +5,19 @@ import os
 import pathlib
 import subprocess
 import sys
+import logging
 from typing import Iterable, Final, cast
 
 try:
     import pandas as _pd  # type: ignore[import-untyped]
     from openpyxl.utils import get_column_letter as _col  # type: ignore[import-untyped]
-except Exception:  # pragma: no cover - optional deps missing
+except ImportError:  # pragma: no cover - optional deps missing
     _pd = None  # type: ignore
     _col = None  # type: ignore
 
 _DATE_FMT: Final = "%Y%m%d_%H%M%S"
+
+log = logging.getLogger(__name__)
 
 
 def build_report(
@@ -96,5 +99,5 @@ def _open_with_os(path: pathlib.Path) -> None:
             subprocess.run(["open", path], check=False)
         else:
             subprocess.run(["xdg-open", path], check=False)
-    except Exception:
-        pass
+    except (OSError, subprocess.SubprocessError) as exc:
+        log.warning("Could not open %s: %s", path, exc)

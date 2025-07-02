@@ -32,7 +32,8 @@ class PluginManager:
             log.debug("checking plugin: %s", name)
             try:
                 module = importlib.import_module(f"sorter.plugins.{name}")
-            except Exception as exc:  # pragma: no cover - optional plugin deps missing
+            except ImportError as exc:
+                # pragma: no cover - optional plugin deps missing
                 log.error("failed to import plugin %s: %s", name, exc)
                 continue
 
@@ -60,7 +61,11 @@ class PluginManager:
         for plugin in self.renamer_plugins:
             plugin_name = plugin.__class__.__module__.split(".")[-1]
             log.debug("trying plugin %s for %s", plugin_name, source_path)
-            new_stem = plugin.rename(source_path)
+            try:
+                new_stem = plugin.rename(source_path)
+            except Exception as exc:  # pragma: no cover - plugin error isolation
+                log.error("plugin %s failed on %s: %s", plugin_name, source_path, exc)
+                continue
             if new_stem:
                 log.debug(
                     "plugin %s renamed %s -> %s",

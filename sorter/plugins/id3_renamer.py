@@ -1,4 +1,5 @@
 import pathlib
+import logging
 from typing import Optional, Any
 
 from mutagen.easyid3 import EasyID3
@@ -25,7 +26,11 @@ class Plugin(RenamerPlugin):
                 audio = MP4(source_path)
             else:
                 return None
-        except Exception:
+        except Exception as exc:
+            # errors may occur if file lacks tags or mutagen cannot parse
+            logging.getLogger(__name__).warning(
+                "Failed to read tags from %s: %s", source_path, exc
+            )
             return None
 
         format_data = {
