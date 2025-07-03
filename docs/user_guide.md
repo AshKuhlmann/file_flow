@@ -16,7 +16,7 @@ plugins:
 ```toml
 fallback_category = "Other"
 
-[classification.Pictures]
+[classification.Images]
 extensions = [".jpg", ".png"]
 
 [plugins.exif]

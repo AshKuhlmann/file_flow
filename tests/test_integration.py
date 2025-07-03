@@ -52,7 +52,9 @@ def test_move_command_with_classification(tmp_path):
     assert result.exit_code == 0
     assert not (source_dir / "image.jpg").exists()
     assert not (source_dir / "document.pdf").exists()
-    assert (dest_dir / "Pictures" / f"{source_dir.name}_2025-06-30_image.jpg").exists()
+    assert (
+        dest_dir / "Images" / f"{source_dir.name}_2025-06-30_image.jpg"
+    ).exists()
     assert (
         dest_dir / "Documents" / f"{source_dir.name}_2025-06-30_document.pdf"
     ).exists()

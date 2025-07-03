@@ -13,7 +13,7 @@ def test_case_insensitive(tmp_path):
     f = tmp_path / "PIC.JPG"
     f.write_bytes(b"dummy")
     cfg = {"classification": DEFAULT_RULES}
-    assert classify(f, cfg) == "Pictures"
+    assert classify(f, cfg) == "Images"
 
 
 def test_magic_fallback(monkeypatch, tmp_path):

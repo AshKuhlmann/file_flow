@@ -21,6 +21,9 @@ def _load_default_rules() -> dict[str, dict[str, list[str]]]:
     except OSError:
         return {}
 
+    if "rules" in raw:
+        return raw["rules"]
+
     ext_map: dict[str, str] = raw.get("ext", {})
     rules: dict[str, dict[str, list[str]]] = {}
     for ext, category in ext_map.items():
@@ -109,6 +112,9 @@ def get_rules(path: pathlib.Path | None = None) -> dict[str, dict[str, list[str]
             raw = tomllib.load(fp)
     except OSError:
         return DEFAULT_RULES
+
+    if "rules" in raw:
+        return raw["rules"]
 
     ext_map: dict[str, str] = raw.get("ext", {})
     rules: dict[str, dict[str, list[str]]] = {}
