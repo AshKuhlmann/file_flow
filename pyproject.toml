@@ -22,7 +22,7 @@ ExifRead = "^3.3.1"
 mutagen = "^1.47.0"
 scikit-learn = "^1.6.1"
 joblib = "^1.5.1"
-pydantic = "^2.7.0"
+pydantic = "^2.11.7"
 pydantic-settings = "^2.10.0"
 
 [tool.poetry.group.dev.dependencies]
