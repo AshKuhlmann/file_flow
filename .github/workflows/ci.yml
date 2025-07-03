@@ -1,86 +1,40 @@
 name: CI
-on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
+
+on: [push, pull_request]
 
 jobs:
-  lint:
-    name: "Lint / flake8"
+  build:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - name: Cache pip dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-      - name: Cache pre-commit
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pre-commit
-          key: ${{ runner.os }}-pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pre-commit-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install poetry pre-commit
-          poetry install --with dev
-      - name: Run flake8
-        run: poetry run flake8
+    strategy:
+      matrix:
+        python-version: ['3.8', '3.9', '3.10', '3.11']
 
-  type-check:
-    name: "Type Check / mypy"
-    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - name: Cache pip dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install poetry
-          poetry install --with dev
-      - name: Run mypy
-        run: poetry run mypy sorter tests
+      - uses: actions/checkout@v3
 
-  test:
-    name: "Test / pytest"
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
         with:
-          python-version: '3.12'
-      - name: Cache pip dependencies
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache dependencies
         uses: actions/cache@v3
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml') }}
           restore-keys: |
             ${{ runner.os }}-pip-
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install poetry
-          poetry install --with dev
+          pip install -e .[dev]
+
+      - name: Lint with ruff
+        run: |
+          pip install ruff
+          ruff check .
+
       - name: Run tests
-        run: poetry run pytest
+        run: |
+          pytest
