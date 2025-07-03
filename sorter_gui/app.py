@@ -166,7 +166,13 @@ class MainWindow(QMainWindow):  # type: ignore[misc]
             except Exception as exc:
                 self.task_queue.put(("error", str(exc)))
 
-        def done(result: tuple[list[tuple[pathlib.Path, pathlib.Path]], pathlib.Path, bool]) -> None:
+        def done(
+            result: tuple[
+                list[tuple[pathlib.Path, pathlib.Path]],
+                pathlib.Path,
+                bool,
+            ]
+        ) -> None:
             mapping, report, dry_flag = result
             self._mapping = mapping
             self.btn_move.setEnabled(not dry_flag)
