@@ -87,7 +87,12 @@ def test_install_windows(monkeypatch, tmp_path):
     assert xml_file.exists()
     content = xml_file.read_text()
     assert "<Command>cmd</Command>" in content
-    assert "<StartBoundary>2024-01-01T00:00:00</StartBoundary>" in content
+
+    from datetime import datetime
+
+    itr = scheduler.croniter("0 0 * * *", datetime.now())
+    start = itr.get_next(datetime).strftime("%Y-%m-%dT%H:%M:%S")
+    assert f"<StartBoundary>{start}</StartBoundary>" in content
     assert "/XML" in captured["args"]
     assert str(xml_file) in captured["args"]
 

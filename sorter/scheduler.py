@@ -54,8 +54,7 @@ def _install_windows(cron_expr: str, cmd: str) -> None:
 
     itr = croniter(cron_expr, datetime.now())
     next_time = itr.get_next(datetime)
-    hour = next_time.hour
-    minute = next_time.minute
+    start = next_time.strftime("%Y-%m-%dT%H:%M:%S")
 
     task_xml = textwrap.dedent(
         f"""
@@ -63,7 +62,7 @@ def _install_windows(cron_expr: str, cmd: str) -> None:
               xmlns='http://schemas.microsoft.com/windows/2004/02/mit/task'>
           <Triggers>
             <CalendarTrigger>
-              <StartBoundary>2024-01-01T{hour:02d}:{minute:02d}:00</StartBoundary>
+              <StartBoundary>{start}</StartBoundary>
               <ScheduleByDay>
                 <DaysInterval>1</DaysInterval>
               </ScheduleByDay>
