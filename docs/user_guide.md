@@ -8,6 +8,21 @@ pip install file-flow
 ## Configuration
 File-Sorter reads settings from `config.toml` and validates them using
 Pydantic. Copy the example file and modify as needed.
+Default rules for common extensions are loaded from `data/default_rules.toml`.
+
+Here is a minimal configuration showing how to add custom categories and enable
+plugins:
+
+```toml
+fallback_category = "Other"
+
+[classification.Pictures]
+extensions = [".jpg", ".png"]
+
+[plugins.exif]
+enabled = true
+pattern = "{year}-{month}-{day}_{model}"
+```
 
 ## Example Usage
 ```bash
