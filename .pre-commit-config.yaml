@@ -7,6 +7,14 @@ repos:
     rev: 7.0.0
     hooks:
       - id: flake8
+  - repo: https://github.com/pycqa/pydocstyle
+    rev: 6.3.0
+    hooks:
+      - id: pydocstyle
+        args:
+          - --convention=google
+          - --add-ignore=D100,D101,D102,D103,D104,D107
+        files: ^sorter/
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.16.0
     hooks:

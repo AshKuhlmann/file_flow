@@ -16,12 +16,25 @@ def plan_moves(
     *,
     pattern: str | None = None,
 ) -> list[tuple[pathlib.Path, pathlib.Path]]:
-    """Return mapping of source files to destination paths.
+    """Generate destination paths for all files found in ``dirs``.
 
-    This performs scanning, classification and plugin-based renaming so that
-    both the CLI and GUI can share identical logic.
+    The function scans the provided directories, classifies each file and
+    optionally renames it using installed plugins. The resulting mapping can be
+    used by both the CLI and GUI interfaces to carry out move operations.
+
+    Args:
+        dirs: A sequence of directories to scan for files.
+        dest: The root directory where files will be moved.
+        pattern: Optional naming pattern overriding the default renamer
+            behaviour.
+
+    Returns:
+        A list of ``(source, destination)`` path tuples representing where each
+        file should be moved.
+
+    Raises:
+        ValueError: If ``dest`` does not represent a valid directory.
     """
-
     config = load_config()
     plugin_manager = PluginManager(config)
     files = scan_paths(list(dirs))
