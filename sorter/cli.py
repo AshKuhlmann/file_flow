@@ -55,6 +55,7 @@ def _main_callback(
         log.debug("Logging level: %s", logging.getLevelName(log_level))
     ctx.obj = load_config()
 
+
 log = logging.getLogger(__name__)
 
 
@@ -69,7 +70,6 @@ def handle_scan(
     ctx: typer.Context,
     dirs: Annotated[list[Path], typer.Argument()],
 ) -> None:
-    cfg: Settings = ctx.obj
     dirs = [p.resolve() for p in dirs]
     for d in dirs:
         if not d.exists():
@@ -92,7 +92,6 @@ def handle_report(
     auto_open: Annotated[bool, typer.Option("--auto-open")] = False,
     fmt: Annotated[str, typer.Option("--format")] = "xlsx",
 ) -> None:
-    cfg: Settings = ctx.obj
     dirs = [p.resolve() for p in dirs]
     for d in dirs:
         if not d.exists():
@@ -111,7 +110,6 @@ def handle_report(
 def handle_review(
     ctx: typer.Context, dirs: Annotated[list[Path], typer.Argument()]
 ) -> None:
-    cfg: Settings = ctx.obj
     dirs = [p.resolve() for p in dirs]
     for d in dirs:
         if not d.exists():
@@ -177,8 +175,10 @@ def handle_move(
 
 @app.command("undo")
 @handle_cli_errors
-def handle_undo(ctx: typer.Context, log_file: Annotated[Path, typer.Argument()]) -> None:
-    cfg: Settings = ctx.obj
+def handle_undo(
+    ctx: typer.Context,
+    log_file: Annotated[Path, typer.Argument()],
+) -> None:
     log.debug("Rolling back moves using log %s", log_file)
     from .rollback import rollback as _rollback
 
@@ -195,7 +195,6 @@ def handle_dupes(
     hardlink: Annotated[bool, typer.Option("--hardlink")] = False,
     algorithm: Annotated[str, typer.Option("--algorithm")] = "sha256",
 ) -> None:
-    cfg: Settings = ctx.obj
     dirs = [p.resolve() for p in dirs]
     for d in dirs:
         if not d.exists():
@@ -238,7 +237,6 @@ def handle_schedule(
     dest: Annotated[Path, typer.Option("--dest")],
     cron: Annotated[str, typer.Option("--cron")] = "0 3 * * *",
 ) -> None:
-    cfg: Settings = ctx.obj
     from .scheduler import validate_cron, install_job
 
     log.debug(
@@ -258,7 +256,6 @@ def handle_stats(
     logs_dir: Annotated[Path, typer.Argument()],
     out: Annotated[Optional[Path], typer.Option("--out")] = None,
 ) -> None:
-    cfg: Settings = ctx.obj
     logs = sorted(logs_dir.glob("file-sort-log_*.jsonl"))
     if not logs:
         log.error("No log files found.")
@@ -275,7 +272,6 @@ def handle_stats(
 def handle_learn_clusters(
     ctx: typer.Context, source_dir: Annotated[Path, typer.Argument()]
 ) -> None:
-    cfg: Settings = ctx.obj
     from . import clustering
     import shutil
 
@@ -298,7 +294,6 @@ def handle_train(
     ctx: typer.Context,
     logs_dir: Annotated[Path, typer.Argument()] = Path.cwd(),
 ) -> None:
-    cfg: Settings = ctx.obj
     from . import supervised
 
     log.debug("Training classifier using logs in %s", logs_dir)
