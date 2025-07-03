@@ -23,6 +23,38 @@ from .config import load_config, Settings
 log = logging.getLogger(__name__)
 
 
+class RuleMatcher:
+    """Encapsulates the logic for matching a file against a rule."""
+
+    def __init__(self, file_path: pathlib.Path, rule: Dict[str, Any]):
+        self.file_path = file_path
+        self.rule = rule
+        self._mime_type: Optional[str] = None
+
+    @property
+    def mime_type(self) -> str:
+        """Lazily compute the MIME type for the file."""
+        if self._mime_type is None:
+            self._mime_type = magic.from_file(self.file_path.as_posix(), mime=True)
+        return self._mime_type
+
+    def match(self) -> bool:
+        """Return True if the file matches the rule."""
+        if "extensions" in self.rule:
+            if self._match_by_extension():
+                return True
+        if "mimetypes" in self.rule:
+            if self._match_by_mime_type():
+                return True
+        return False
+
+    def _match_by_extension(self) -> bool:
+        return self.file_path.suffix.lower() in self.rule.get("extensions", [])
+
+    def _match_by_mime_type(self) -> bool:
+        return self.mime_type in self.rule.get("mimetypes", [])
+
+
 def classify(
     path: pathlib.Path,
     config: Union[Dict[str, Any], Settings],
@@ -82,43 +114,11 @@ def _get_generic_category(path: pathlib.Path) -> Optional[str]:
         return None
 
 
-def classify_file(path: pathlib.Path) -> str:
-    """Classify a file using models and fallback logic."""
+def classify_file(file_path: pathlib.Path, rules: Dict[str, Any]) -> Optional[str]:
+    """Classify ``file_path`` using a dictionary of ``rules``."""
 
-    # 1. Supervised model prediction (optional)
-    if supervised is not None:
-        category = supervised.predict_category(path)
-        if category:
-            log.info("(Predicted: %s)", category)
-            log.debug("final category from supervised model: %s", category)
-            return category
-
-    # 2. Explicit rules from user config
-    config = load_config()
-    rule_category = classify(path, config)
-    if rule_category:
-        log.debug("final category from rule-based rules: %s", rule_category)
-        return rule_category
-
-    # 3. Clustering model fallback using stored labels (optional)
-    if clustering is not None and clustering.MODEL_PATH.exists():
-        cluster_id = clustering.predict_cluster(path)
-        if cluster_id is not None and clustering.LABELS_PATH.exists():
-            try:
-                with open(clustering.LABELS_PATH) as f:
-                    labels: dict[str, str] = json.load(f)
-                if str(cluster_id) in labels:
-                    label = labels[str(cluster_id)]
-                    log.debug(
-                        "final category from cluster label %s: %s",
-                        cluster_id,
-                        label,
-                    )
-                    return label
-            except (OSError, json.JSONDecodeError) as exc:
-                log.warning("Could not read cluster labels: %s", exc)
-
-    # 4. Final fallback using basic logic
-    final = rule_category or "Unsorted"
-    log.debug("final category from fallback: %s", final)
-    return final
+    for destination, rule_config in rules.items():
+        matcher = RuleMatcher(file_path, rule_config)
+        if matcher.match():
+            return destination
+    return None
