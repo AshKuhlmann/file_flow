@@ -11,5 +11,5 @@ nav:
   - Home: index.md
   - User Guide: user_guide.md
   - Architecture: architecture.md
-  - Changelog: changelog.md
+  - Changelog: ../CHANGELOG.md
 markdown_extensions: [tables, admonition, codehilite]
