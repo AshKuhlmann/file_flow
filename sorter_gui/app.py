@@ -2,12 +2,10 @@ from __future__ import annotations
 
 import pathlib
 import sys
-import threading
-import queue
 
 from typing import Any, Iterable
 
-from PyQt6.QtCore import QTimer
+from PyQt6.QtCore import QObject, pyqtSignal, QThread
 from PyQt6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -36,16 +34,42 @@ def _build_mapping(
     return plan_moves(list(paths), dest_root)
 
 
+class Worker(QObject):
+    """Background worker object for long-running tasks."""
+
+    finished = pyqtSignal(object)
+    progress = pyqtSignal(int)
+    log = pyqtSignal(str)
+    error = pyqtSignal(str, str)
+
+    def __init__(self, func: Any, *args: Any) -> None:
+        super().__init__()
+        self._func = func
+        self._args = args
+
+    def run(self) -> None:  # pragma: no cover - GUI thread
+        try:
+            result = self._func(self._emit_progress, *self._args)
+        except Exception as exc:  # pragma: no cover - runtime guard
+            self.log.emit(f"An error occurred: {exc}")
+            self.error.emit("Operation Failed", f"A critical error occurred:\n\n{exc}")
+        else:
+            self.finished.emit(result)
+
+    def _emit_progress(self, value: int, message: str | None = None) -> None:
+        self.progress.emit(value)
+        if message:
+            self.log.emit(message)
+
+
 class MainWindow(QMainWindow):  # type: ignore[misc]
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("File Sorter")
         self._mapping: list[tuple[pathlib.Path, pathlib.Path]] = []
         self._last_log: pathlib.Path | None = None
-        self.task_queue: queue.Queue = queue.Queue()
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self._check_queue)
-        self._worker_thread: threading.Thread | None = None
+        self._worker_thread: QThread | None = None
+        self._worker: Worker | None = None
         self._done_callback: Any | None = None
         self._build_ui()
 
@@ -102,37 +126,37 @@ class MainWindow(QMainWindow):  # type: ignore[misc]
         """Append *text* to the log widget."""
         self.log.append(text)
 
-    def _start_thread(self, fn: Any, callback: Any) -> None:
-        """Run *fn* in a background thread and call *callback* when done."""
+    def _start_worker(self, worker: Worker, callback: Any) -> None:
+        """Run *worker* in a background thread and call *callback* when done."""
         self._done_callback = callback
-        self._worker_thread = threading.Thread(target=fn, daemon=True)
-        self._worker_thread.start()
-        self.timer.start(100)
+        thread = QThread(self)
+        worker.moveToThread(thread)
+        worker.progress.connect(self.update_progress_bar)
+        worker.log.connect(self._log)
+        worker.error.connect(self.show_error_message)
+        worker.finished.connect(self._handle_done)
+        thread.started.connect(worker.run)
+        thread.start()
+        self._worker_thread = thread
+        self._worker = worker
 
-    def _check_queue(self) -> None:
-        """Process messages from the worker thread."""
-        try:
-            msg_type, data = self.task_queue.get_nowait()
-        except queue.Empty:
-            if self._worker_thread and not self._worker_thread.is_alive():
-                self.timer.stop()
-            return
+    def _handle_done(self, result: Any) -> None:
+        self.progress.setValue(0)
+        if self._done_callback:
+            self._done_callback(result)
+        if self._worker_thread:
+            self._worker_thread.quit()
+            self._worker_thread.wait()
+        self._worker_thread = None
+        self._worker = None
 
-        if msg_type == "progress":
-            self.progress.setValue(int(data))
-        elif msg_type == "done":
-            self.timer.stop()
-            self.progress.setValue(0)
-            if self._done_callback:
-                self._done_callback(data)
-            self._worker_thread = None
-        elif msg_type == "error":
-            self.timer.stop()
-            self.progress.setValue(0)
-            self._log(f"Error: {data}")
-            self.btn_report.setEnabled(True)
-            self.btn_move.setEnabled(True)
-            self._worker_thread = None
+    def update_progress_bar(self, value: int) -> None:
+        self.progress.setValue(value)
+
+    def show_error_message(self, title: str, message: str) -> None:
+        QMessageBox.critical(self, title, message)
+        self.btn_report.setEnabled(True)
+        self.btn_move.setEnabled(True)
 
     def _add_folder(self) -> None:
         path = QFileDialog.getExistingDirectory(self, "Select Folder")
@@ -158,21 +182,16 @@ class MainWindow(QMainWindow):  # type: ignore[misc]
             return
         dry = self.dry_run.isChecked()
 
-        def work() -> None:
-            try:
-                mapping = _build_mapping(paths, dest)
-                report = build_report(mapping, auto_open=True)
-                self.task_queue.put(("done", (mapping, report, dry)))
-            except Exception as exc:
-                self.task_queue.put(("error", str(exc)))
+        def task(progress_cb: Any) -> tuple[
+            list[tuple[pathlib.Path, pathlib.Path]], pathlib.Path, bool
+        ]:
+            mapping = _build_mapping(paths, dest)
+            progress_cb(50, None)
+            report = build_report(mapping, auto_open=True)
+            progress_cb(100, None)
+            return mapping, report, dry
 
-        def done(
-            result: tuple[
-                list[tuple[pathlib.Path, pathlib.Path]],
-                pathlib.Path,
-                bool,
-            ]
-        ) -> None:
+        def done(result: tuple[list[tuple[pathlib.Path, pathlib.Path]], pathlib.Path, bool]) -> None:
             mapping, report, dry_flag = result
             self._mapping = mapping
             self.btn_move.setEnabled(not dry_flag)
@@ -181,7 +200,8 @@ class MainWindow(QMainWindow):  # type: ignore[misc]
 
         self.btn_report.setEnabled(False)
         self.btn_move.setEnabled(False)
-        self._start_thread(work, done)
+        self.progress.setValue(0)
+        self._start_worker(Worker(task), done)
 
     def _on_move(self) -> None:
         if not self._mapping:
@@ -197,13 +217,13 @@ class MainWindow(QMainWindow):  # type: ignore[misc]
         ):
             return
 
-        def work() -> None:
-            try:
-                log_path = move_with_log(self._mapping, show_progress=False)
-                self.task_queue.put(("progress", 100))
-                self.task_queue.put(("done", log_path))
-            except Exception as exc:
-                self.task_queue.put(("error", str(exc)))
+        def task(progress_cb: Any) -> pathlib.Path:
+            def cb(percent: int, src: pathlib.Path) -> None:
+                progress_cb(percent, f"Moved {src.name}")
+
+            return move_with_log(
+                self._mapping, show_progress=False, progress_callback=cb
+            )
 
         def done(log_path: pathlib.Path) -> None:
             self._last_log = log_path
@@ -222,7 +242,8 @@ class MainWindow(QMainWindow):  # type: ignore[misc]
 
         self.btn_move.setEnabled(False)
         self.btn_report.setEnabled(False)
-        self._start_thread(work, done)
+        self.progress.setValue(0)
+        self._start_worker(Worker(task), done)
 
 
 def main() -> None:

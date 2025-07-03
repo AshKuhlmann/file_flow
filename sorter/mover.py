@@ -5,7 +5,7 @@ import logging
 import pathlib
 import shutil
 import time
-from typing import Any, Sequence, TYPE_CHECKING
+from typing import Any, Sequence, TYPE_CHECKING, Callable
 
 from .utils import sha256sum
 
@@ -38,8 +38,13 @@ def move_with_log(
     *,
     log_path: pathlib.Path | None = None,
     show_progress: bool = True,
+    progress_callback: Callable[[int, pathlib.Path], None] | None = None,
 ) -> pathlib.Path:
-    """Move *mapping* (src→dst) atomically and log each step."""
+    """Move *mapping* (src→dst) atomically and log each step.
+
+    ``progress_callback`` is invoked after each file is moved with the
+    completion percentage and the source path.
+    """
 
     if log_path is None:
         log_path = pathlib.Path.cwd() / f"file-sort-log_{int(time.time())}.jsonl"
@@ -56,7 +61,7 @@ def move_with_log(
         task_id = progress.add_task("Moving", total=len(mapping))
 
     with log_path.open("w", encoding="utf-8") as logfp:
-        for src, dst in mapping:
+        for idx, (src, dst) in enumerate(mapping):
             dst.parent.mkdir(parents=True, exist_ok=True)
             checksum = sha256sum(src)
             category = dst.parent.name
@@ -98,6 +103,9 @@ def move_with_log(
                 log.info("moved %s -> %s", src, dst)
             if progress and task_id is not None:
                 progress.update(task_id, advance=1)
+            if progress_callback:
+                percent = int(((idx + 1) / len(mapping)) * 100)
+                progress_callback(percent, src)
     if progress:
         progress.stop()
     log.info("log file written to %s", log_path)
