@@ -1,6 +1,6 @@
+import os
 import pathlib
 import tomllib
-import os
 from typing import Optional
 
 from pydantic import BaseModel, Field
@@ -8,6 +8,27 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 DEFAULT_CONFIG_PATH = pathlib.Path.home() / ".file-sorter" / "config.toml"
+DEFAULT_RULES_PATH = (
+    pathlib.Path(__file__).parent.parent / "data" / "default_rules.toml"
+)
+
+
+def _load_default_rules() -> dict[str, dict[str, list[str]]]:
+    """Read the bundled default rules from the TOML data file."""
+    try:
+        with open(DEFAULT_RULES_PATH, "rb") as f:
+            raw = tomllib.load(f)
+    except OSError:
+        return {}
+
+    ext_map: dict[str, str] = raw.get("ext", {})
+    rules: dict[str, dict[str, list[str]]] = {}
+    for ext, category in ext_map.items():
+        rules.setdefault(category, {"extensions": []})["extensions"].append(ext)
+    return rules
+
+
+DEFAULT_RULES = _load_default_rules()
 
 
 class ClassificationRule(BaseModel):
@@ -30,6 +51,7 @@ class Settings(BaseSettings):
     )
 
     fallback_category: Optional[str] = "Other"
+    dry_run: bool = False
     classification: dict[str, ClassificationRule] = Field(default_factory=dict)
     plugins: dict[str, PluginConfig] = Field(default_factory=dict)
 
@@ -71,98 +93,3 @@ def load_config(path: pathlib.Path = DEFAULT_CONFIG_PATH) -> Settings:
             for k, v in DEFAULT_RULES.items()
         }
     return cfg
-
-
-# Default classification rules used when no config is provided
-DEFAULT_RULES = {
-    "Pictures": {
-        "extensions": [
-            ".jpg",
-            ".jpeg",
-            ".png",
-            ".gif",
-            ".bmp",
-            ".tiff",
-            ".svg",
-            ".webp",
-        ]
-    },
-    "Videos": {
-        "extensions": [
-            ".mp4",
-            ".mov",
-            ".avi",
-            ".mkv",
-            ".wmv",
-            ".flv",
-        ]
-    },
-    "Documents": {
-        "extensions": [
-            ".pdf",
-            ".doc",
-            ".docx",
-            ".txt",
-            ".rtf",
-            ".odt",
-        ]
-    },
-    "Spreadsheets": {
-        "extensions": [
-            ".xls",
-            ".xlsx",
-            ".ods",
-            ".csv",
-        ]
-    },
-    "Presentations": {
-        "extensions": [
-            ".ppt",
-            ".pptx",
-            ".odp",
-        ]
-    },
-    "Audio": {
-        "extensions": [
-            ".mp3",
-            ".wav",
-            ".flac",
-            ".aac",
-            ".ogg",
-            ".m4a",
-            ".wma",
-        ]
-    },
-    "Archives": {
-        "extensions": [
-            ".zip",
-            ".tar",
-            ".gz",
-            ".rar",
-            ".7z",
-            ".bz2",
-            ".xz",
-        ]
-    },
-    "Scripts": {
-        "extensions": [
-            ".py",
-            ".js",
-            ".sh",
-            ".bat",
-            ".ps1",
-            ".pl",
-            ".rb",
-        ]
-    },
-    "Fonts": {
-        "extensions": [
-            ".ttf",
-            ".otf",
-            ".woff",
-            ".woff2",
-        ]
-    },
-    "Books": {"extensions": [".epub", ".mobi"]},
-    "Packages": {"extensions": [".deb", ".rpm", ".pkg"]},
-}

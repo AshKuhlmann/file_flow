@@ -12,7 +12,7 @@ from .mover import move_with_log
 from .planner import plan_moves
 from .dupes import find_duplicates, delete_older as _delete_older
 from .cli_utils import handle_cli_errors
-from .settings import settings, Settings
+from .config import load_config, Settings
 
 log = logging.getLogger(__name__)
 
@@ -310,10 +310,11 @@ def main(argv: Iterable[str] | None = None) -> None:
         log.debug("Verbose logging enabled.")
     else:
         log.debug("Logging level: %s", logging.getLevelName(log_level))
+    cfg = load_config()
     if hasattr(args, "func"):
         if hasattr(args, "dry_run"):
-            settings.dry_run = args.dry_run
-        args.func(args, settings)
+            cfg.dry_run = args.dry_run
+        args.func(args, cfg)
     else:
         parser.print_help()
 
