@@ -102,7 +102,7 @@ def _get_generic_category(path: pathlib.Path) -> Optional[str]:
         category = {
             "video": "Videos",
             "audio": "Audio",
-            "image": "Pictures",
+            "image": "Images",
             "text": "Documents",
             "application": "Documents",
         }.get(major)
@@ -116,8 +116,15 @@ def _get_generic_category(path: pathlib.Path) -> Optional[str]:
 def classify_file(file_path: pathlib.Path, rules: Dict[str, Any]) -> Optional[str]:
     """Classify ``file_path`` using a dictionary of ``rules``."""
 
-    for destination, rule_config in rules.items():
+    # Sort rules by priority, highest first. Missing priority defaults to 0.
+    sorted_rules = sorted(
+        rules.items(),
+        key=lambda item: item[1].get("priority", 0),
+        reverse=True,
+    )
+
+    for destination, rule_config in sorted_rules:
         matcher = RuleMatcher(file_path, rule_config)
         if matcher.match():
-            return destination
+            return rule_config.get("destination", destination)
     return None

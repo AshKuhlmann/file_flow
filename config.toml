@@ -1,7 +1,7 @@
 fallback_category = "Other"
 
 
-[classification.Pictures]
+[classification.Images]
 extensions = [
     ".jpg",
     ".jpeg",
