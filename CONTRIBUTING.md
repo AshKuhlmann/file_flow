@@ -1,19 +1,28 @@
-# Contributing
+# How to Contribute
 
-Thank you for considering contributing to File-Flow.
+We welcome contributions!
 
-## Development setup
+## Development Setup
 
-Install the development dependencies with Poetry and set up the git hooks:
+1.  Fork and clone the repository.
+2.  It's recommended to use a virtual environment:
+    ```bash
+    python -m venv .venv
+    source .venv/bin/activate
+    ```
+3.  Install the project in editable mode with test dependencies:
+    ```bash
+    pip install -e .[test]
+    ```
+4.  Install pre-commit hooks:
+    ```bash
+    pre-commit install
+    ```
+
+## Running Tests
+
+To run the full test suite:
 
 ```bash
-poetry install
-pre-commit install
+pytest
 ```
-
-## Docstring style
-
-This project uses the **Google Python Style** for all docstrings. Each public
-module, class and function should include a clear docstring describing its
-purpose, arguments, return values and possible exceptions. The formatting is
-checked automatically using `pydocstyle` via pre-commit hooks.
