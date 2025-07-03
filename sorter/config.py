@@ -93,3 +93,31 @@ def load_config(path: pathlib.Path = DEFAULT_CONFIG_PATH) -> Settings:
             for k, v in DEFAULT_RULES.items()
         }
     return cfg
+
+
+def get_config(path: pathlib.Path | None = None) -> Settings:
+    """Return the application config using *path* if provided."""
+    return load_config(path or DEFAULT_CONFIG_PATH)
+
+
+def get_rules(path: pathlib.Path | None = None) -> dict[str, dict[str, list[str]]]:
+    """Load classification rules from a TOML file or fallback to defaults."""
+    if path is None:
+        return DEFAULT_RULES
+    try:
+        with path.open("rb") as fp:
+            raw = tomllib.load(fp)
+    except OSError:
+        return DEFAULT_RULES
+
+    ext_map: dict[str, str] = raw.get("ext", {})
+    rules: dict[str, dict[str, list[str]]] = {}
+    for ext, category in ext_map.items():
+        rules.setdefault(category, {"extensions": []})["extensions"].append(ext)
+    for cat, cfg in raw.items():
+        if cat == "ext":
+            continue
+        existing = rules.setdefault(cat, {"extensions": [], "mimetypes": []})
+        existing["extensions"].extend(cfg.get("extensions", []))
+        existing["mimetypes"].extend(cfg.get("mimetypes", []))
+    return rules
