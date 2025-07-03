@@ -26,15 +26,24 @@ class PluginManager:
         loaded: List[RenamerPlugin] = []
 
         try:
-            entry_points = importlib.metadata.entry_points(group="file_flow.renamers")
-        except AttributeError:  # pragma: no cover - older Python
-            entry_points = [
-                ep
-                for ep in importlib.metadata.entry_points()
-                if ep.group == "file_flow.renamers"
-            ]
+            eps = list(importlib.metadata.entry_points(group="file_flow.renamers"))
+        except TypeError:  # pragma: no cover - older Python
+            all_eps = importlib.metadata.entry_points()
+            if isinstance(all_eps, dict):
+                eps = [
+                    ep
+                    for group_eps in all_eps.values()
+                    for ep in group_eps
+                    if getattr(ep, "group", "") == "file_flow.renamers"
+                ]
+            else:
+                eps = [
+                    ep
+                    for ep in all_eps
+                    if getattr(ep, "group", "") == "file_flow.renamers"
+                ]
 
-        for ep in entry_points:
+        for ep in eps:
             name = ep.name
             log.debug("checking plugin: %s", name)
             cfg = self.plugin_config.get(name, {})
