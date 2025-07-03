@@ -4,6 +4,14 @@
 
 File-Sorter automatically organizes messy download folders. Point it at a directory and it will classify, rename and move files in seconds.
 
+## Features
+- Automatic classification and renaming
+- Duplicate detection to keep your folders tidy
+- Undo command to roll back the last move
+- Desktop GUI for point-and-click usage
+- Built-in scheduler for recurring organization
+- Stats dashboard to visualize activity
+
 ## Quick Demo
 
 ![Demo](media/demo.svg)
@@ -53,6 +61,18 @@ file-sorter schedule "0 3 * * *" ~/Downloads --dest ~/Sorted
 Generate an interactive dashboard from your move logs:
 ```bash
 file-sorter stats ~/Downloads
+```
+
+## Undo
+Rollback a move operation using the log file path:
+```bash
+file-sorter undo /path/to/move.log
+```
+
+## Review
+Update the review queue and display any files that need attention:
+```bash
+file-sorter review ~/Downloads
 ```
 
 ## Development
