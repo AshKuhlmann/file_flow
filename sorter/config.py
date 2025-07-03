@@ -51,6 +51,7 @@ class Settings(BaseSettings):
     )
 
     fallback_category: Optional[str] = "Other"
+    dry_run: bool = False
     classification: dict[str, ClassificationRule] = Field(default_factory=dict)
     plugins: dict[str, PluginConfig] = Field(default_factory=dict)
 
