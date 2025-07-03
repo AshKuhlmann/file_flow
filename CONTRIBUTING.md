@@ -4,10 +4,10 @@ Thank you for considering contributing to File-Flow.
 
 ## Development setup
 
-Install the development dependencies and set up the git hooks:
+Install the development dependencies with Poetry and set up the git hooks:
 
 ```bash
-pip install -r requirements.txt  # or `poetry install`
+poetry install
 pre-commit install
 ```
 
