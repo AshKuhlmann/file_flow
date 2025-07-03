@@ -104,7 +104,7 @@ A "dry run" shows you what changes will be made *without* moving any files. It's
 Open your terminal and run the following command. Replace `~/Downloads` with the path to your downloads folder and `~/Documents/Sorted` with where you want the organized files to go.
 
 ```bash
-file-flow sort --source ~/Downloads --destination ~/Documents/Sorted --dry-run
+file-sorter sort --source ~/Downloads --destination ~/Documents/Sorted --dry-run
 ```
 
 You'll see output like this, showing the plan:
@@ -119,7 +119,7 @@ INFO: Plan: Move '~/Downloads/vacation.jpg' to '~/Documents/Sorted/Images/vacati
 If you're happy with the plan, run the same command without the `--dry-run` flag to actually move the files.
 
 ```bash
-file-flow sort --source ~/Downloads --destination ~/Documents/Sorted
+file-sorter sort --source ~/Downloads --destination ~/Documents/Sorted
 ```
 
 That's it! Your files are now neatly organized.
@@ -127,4 +127,4 @@ That's it! Your files are now neatly organized.
 ### Next Steps
 
 * Learn how to [customize the rules](link-to-rules-doc.md).
-* Try the [graphical user interface](link-to-gui-doc.md) by running `file-flow-gui`.
+* Try the [graphical user interface](link-to-gui-doc.md) by running `file-sorter-gui`.
