@@ -16,7 +16,7 @@ This diagram shows the high-level data flow when the `sort` command is executed.
 
 ```mermaid
 graph TD
-    A[Start: file-flow sort] --> B{Load Config & Rules};
+    A[Start: file-sorter sort] --> B{Load Config & Rules};
     B --> C[Instantiate Planner, Mover, etc.];
     C --> D[Scanner: Find files in source];
     D -- File List --> E[Planner: For each file...];
