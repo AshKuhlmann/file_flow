@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import hashlib
-import os
 import pathlib
+from io import SEEK_END
 from collections import defaultdict
 from typing import Iterable, Sequence, Dict, List
 
@@ -22,7 +22,7 @@ def _quick_hash(
     with path.open("rb") as fp:
         h.update(fp.read(sample))
         if size > sample:
-            fp.seek(-sample, os.SEEK_END)
+            fp.seek(-sample, SEEK_END)
             h.update(fp.read(sample))
     return h.hexdigest()
 
