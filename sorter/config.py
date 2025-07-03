@@ -8,7 +8,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 DEFAULT_CONFIG_PATH = pathlib.Path.home() / ".file-sorter" / "config.toml"
-DEFAULT_RULES_PATH = pathlib.Path(__file__).parent.parent / "data" / "default_rules.toml"
+DEFAULT_RULES_PATH = (
+    pathlib.Path(__file__).parent.parent / "data" / "default_rules.toml"
+)
 
 
 def _load_default_rules() -> dict[str, dict[str, list[str]]]:
