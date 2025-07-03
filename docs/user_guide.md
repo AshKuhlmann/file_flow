@@ -126,5 +126,5 @@ That's it! Your files are now neatly organized.
 
 ### Next Steps
 
-* Learn how to [customize the rules](link-to-rules-doc.md).
-* Try the [graphical user interface](link-to-gui-doc.md) by running `file-flow-gui`.
+* Learn how to [customize the rules](#configuration).
+* Try the [graphical user interface](../README.md#desktop-gui) by running `file-sorter-gui`.
