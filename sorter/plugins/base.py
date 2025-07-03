@@ -21,4 +21,3 @@ class RenamerPlugin(ABC):
     @abstractmethod
     def rename(self, file_path: Path) -> Optional[str]:
         """Analyze ``file_path`` and return a new filename or ``None``."""
-
