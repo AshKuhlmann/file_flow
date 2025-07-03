@@ -5,7 +5,6 @@ from typing import Any, Dict, Optional, Union
 
 from pydantic import BaseModel
 
-import json
 import logging
 import magic  # python-magic
 
@@ -18,7 +17,7 @@ try:
     from . import clustering  # type: ignore
 except ImportError:  # pragma: no cover - optional dep missing
     clustering = None  # type: ignore
-from .config import load_config, Settings
+from .config import Settings
 
 log = logging.getLogger(__name__)
 

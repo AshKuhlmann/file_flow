@@ -1,6 +1,5 @@
 import magic
 from sorter.classifier import classify_file
-from pathlib import Path
 
 
 def test_extension_rule(tmp_path):
