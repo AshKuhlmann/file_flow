@@ -16,6 +16,7 @@ def test_mimetype_rule(tmp_path, monkeypatch):
     rules = {"Music": {"mimetypes": ["audio/flac"]}}
     assert classify_file(f, rules) == "Music"
 
+
 def test_priority_and_destination(tmp_path):
     f = tmp_path / "Screen.png"
     f.write_text("data")

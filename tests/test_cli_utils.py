@@ -1,4 +1,3 @@
-import pytest
 from sorter import cli_utils
 
 
