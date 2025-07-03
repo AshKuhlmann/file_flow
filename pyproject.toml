@@ -70,6 +70,6 @@ ignore_missing_imports = true
 file-sorter-gui = "sorter_gui.app:main"
 file-sorter = "sorter.cli:main"
 
-[project.entry-points."file_flow.renamers"]
+[tool.poetry.plugins."file_flow.renamers"]
 exif = "sorter.plugins.exif_renamer:ExifRenamer"
 id3 = "sorter.plugins.id3_renamer:Id3Renamer"
