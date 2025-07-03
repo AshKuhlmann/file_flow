@@ -6,6 +6,7 @@ import pathlib
 import subprocess
 import sys
 import logging
+from copy import copy
 from typing import Iterable, Final, cast
 
 try:
@@ -75,7 +76,10 @@ def build_report(
             ws = writer.sheets["Report"]
             for idx, column in enumerate(df.columns, start=1):
                 col = _col(idx)
-                ws[f"{col}1"].font = ws[f"{col}1"].font.copy(bold=True)
+                cell = ws[f"{col}1"]
+                new_font = copy(cell.font)
+                new_font.bold = True
+                cell.font = new_font
                 col_values = [column, *df.iloc[:, idx - 1].tolist()]
                 max_len = max(len(str(x)) for x in col_values)
                 ws.column_dimensions[col].width = min(max_len + 2, 80)
