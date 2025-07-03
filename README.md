@@ -56,7 +56,7 @@ file-sorter stats ~/Downloads
 ```
 
 ## Development
-Set up pre-commit hooks to automatically run formatting and tests:
+Set up pre-commit hooks to automatically run formatting and tests. See [CONTRIBUTING.md](CONTRIBUTING.md) for coding conventions and setup steps:
 ```bash
 pre-commit install
 pre-commit install -t pre-push
