@@ -73,7 +73,7 @@ def plan_moves(
     # This is a dictionary comprehension, a concise way to build a dict. It's
     # equivalent to a for loop that populates ``classification_rules``.
     classification_rules = {
-        k: v.dict() if isinstance(v, BaseModel) else v
+        k: v.model_dump() if isinstance(v, BaseModel) else v
         for k, v in cfg.classification.items()
     }
     planner = Planner(classification_rules, cfg)
