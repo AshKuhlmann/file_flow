@@ -11,10 +11,10 @@ from .scanner import scan_paths
 from .reporter import build_report
 from .review import ReviewQueue
 from .mover import move_with_log
-from .planner import plan_moves
+from .planner import plan_moves, Planner
 from .dupes import find_duplicates, delete_older as _delete_older
 from .cli_utils import handle_cli_errors
-from .config import load_config, Settings
+from .config import Settings, get_config, get_rules
 
 app = typer.Typer(
     name="sorter",
@@ -53,7 +53,7 @@ def _main_callback(
         log.debug("Verbose logging enabled.")
     else:
         log.debug("Logging level: %s", logging.getLevelName(log_level))
-    ctx.obj = load_config()
+    ctx.obj = get_config()
 
 
 log = logging.getLogger(__name__)
@@ -128,6 +128,46 @@ def handle_review(
         log.info("  • %s", p)
 
 
+@app.command("sort")
+@handle_cli_errors
+def handle_sort(
+    ctx: typer.Context,
+    dirs: Annotated[list[Path], typer.Argument()],
+    dest: Annotated[Path, typer.Option("--dest")],
+    config_file: Annotated[Optional[Path], typer.Option("--config")] = None,
+    rules_file: Annotated[Optional[Path], typer.Option("--rules")] = None,
+    pattern: Annotated[Optional[str], typer.Option("--pattern")] = None,
+    yes: Annotated[bool, typer.Option("--yes", help="skip confirmation")] = False,
+    dry_run: Annotated[
+        bool,
+        typer.Option("--dry-run/--no-dry-run", help="simulate without moving"),
+    ] = True,
+) -> None:
+    """Sort files using a config and rules file."""
+    cfg = get_config(config_file)
+    cfg.dry_run = dry_run
+    rules = get_rules(rules_file)
+    planner = Planner(rules, cfg)
+    dirs = [p.resolve() for p in dirs]
+    for d in dirs:
+        if not d.exists():
+            raise FileNotFoundError(f"{d} does not exist")
+    mapping = planner.plan(dirs, dest, pattern=pattern)
+    log.info("%d files to process", len(mapping))
+    report_path = build_report(mapping, auto_open=False)
+    log.info("Report ready: %s", report_path)
+    if dry_run:
+        log.warning("Dry-run complete — no files were moved.")
+        return
+    if not yes:
+        ans = input("Proceed with move? [y/N]: ")
+        if ans.strip().lower() not in {"y", "yes"}:
+            log.info("User cancelled operation.")
+            return
+    log_path = move_with_log(mapping)
+    log.info("Move complete. Log available at: %s", log_path)
+
+
 @app.command("move")
 @handle_cli_errors
 def handle_move(
@@ -149,7 +189,7 @@ def handle_move(
             raise FileNotFoundError(f"{d} does not exist")
     try:
         log.debug("Beginning move operation into %s", dest)
-        mapping = plan_moves(dirs, dest, pattern=pattern)
+        mapping = plan_moves(dirs, dest, pattern=pattern, config=cfg)
         log.info("%d files to process", len(mapping))
         for src, dst in mapping:
             log.debug("plan move %s -> %s", src, dst)
