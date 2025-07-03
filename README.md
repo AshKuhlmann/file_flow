@@ -1,6 +1,6 @@
 # File-Sorter
 
-![CI](https://github.com/<ORG>/file-sorter/actions/workflows/ci.yml/badge.svg) ![Coverage](https://codecov.io/gh/<ORG>/file-sorter/branch/main/graph/badge.svg) ![PyPI](https://img.shields.io/pypi/v/file-sorter) ![Docs](https://img.shields.io/badge/docs-online-blue)
+[![CI](https://github.com/AshKuhlmann/file-sorter/actions/workflows/ci.yml/badge.svg)](https://github.com/AshKuhlmann/file-sorter/actions/workflows/ci.yml) [![Coverage](https://codecov.io/gh/AshKuhlmann/file-sorter/branch/main/graph/badge.svg)](https://codecov.io/gh/AshKuhlmann/file-sorter/branch/main) ![PyPI](https://img.shields.io/pypi/v/file-sorter) [![Docs](https://img.shields.io/badge/docs-online-blue)](https://ashkuhlmann.github.io/file-sorter/)
 
 File-Sorter automatically organizes messy download folders. Point it at a directory and it will classify, rename and move files in seconds.
 
