@@ -61,7 +61,7 @@ def classify(
     """Return category label for *path* based on provided config."""
     if isinstance(config, Settings):
         classification_rules = {
-            k: v.model_dump() if isinstance(v, BaseModel) else v
+            k: v.dict() if isinstance(v, BaseModel) else v
             for k, v in config.classification.items()
         }
         fallback_category = config.fallback_category

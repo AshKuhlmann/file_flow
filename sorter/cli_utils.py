@@ -2,7 +2,7 @@ import functools
 import logging
 
 
-__all__ = ["handle_cli_errors"]
+__all__ = ["handle_cli_errors", "human_readable_size"]
 
 log = logging.getLogger(__name__)
 
@@ -38,3 +38,15 @@ def handle_cli_errors(func):
         raise SystemExit(1)
 
     return wrapper
+
+
+def human_readable_size(size: int) -> str:
+    """Convert *size* in bytes to a human readable string."""
+
+    units = ["B", "KB", "MB", "GB", "TB", "PB"]
+    value = float(size)
+    for unit in units:
+        if value < 1024.0 or unit == units[-1]:
+            return f"{value:.1f} {unit}"
+        value /= 1024.0
+    return f"{value:.1f} {units[-1]}"
