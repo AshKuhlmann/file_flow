@@ -11,6 +11,53 @@ from .utils import sha256sum
 
 log = logging.getLogger(__name__)
 
+
+class Mover:
+    """Handles the moving and renaming of files."""
+
+    def __init__(
+        self,
+        source_dir: pathlib.Path,
+        target_dir: pathlib.Path,
+        dry_run: bool = False,
+    ) -> None:
+        self.source_dir = source_dir
+        self.target_dir = target_dir
+        self.dry_run = dry_run
+        self.log = logging.getLogger(__name__)
+
+    def move_file(
+        self,
+        source_path: pathlib.Path,
+        destination_folder: str,
+        new_name: str | None = None,
+    ) -> None:
+        """Move ``source_path`` into ``destination_folder`` optionally renaming it."""
+
+        target_path = self.target_dir / destination_folder
+        final_destination = target_path / (new_name or source_path.name)
+
+        self.log.info("Plan: Move '%s' to '%s'", source_path, final_destination)
+
+        if self.dry_run:
+            return
+
+        try:
+            target_path.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(source_path), str(final_destination))
+            self.log.info("Success: Moved '%s' to '%s'", source_path, final_destination)
+        except PermissionError:
+            self.log.error("Failed to move '%s': Permission denied.", source_path)
+        except FileNotFoundError:
+            self.log.error("Failed to move '%s': Source file not found.", source_path)
+        except Exception as exc:  # pragma: no cover - unexpected
+            self.log.error(
+                "An unexpected error occurred while moving '%s': %s",
+                source_path,
+                exc,
+            )
+
+
 if TYPE_CHECKING:  # pragma: no cover - typing support
     from rich.progress import Progress
 else:
