@@ -50,14 +50,16 @@ def test_schedule_command(tmp_path, monkeypatch):
     monkeypatch.setattr("sorter.scheduler.validate_cron", fake_validate)
     monkeypatch.setattr("sorter.scheduler.install_job", fake_install)
     dest = tmp_path / "dest"
-    result = run_cli([
-        "schedule",
-        str(tmp_path),
-        "--dest",
-        str(dest),
-        "--cron",
-        "5 4 * * *",
-    ])
+    result = run_cli(
+        [
+            "schedule",
+            str(tmp_path),
+            "--dest",
+            str(dest),
+            "--cron",
+            "5 4 * * *",
+        ]
+    )
     assert result.exit_code == 0
     assert calls["validate"] == "5 4 * * *"
     assert calls["install"] == ("5 4 * * *", [tmp_path], dest)
@@ -111,14 +113,16 @@ def test_move_custom_pattern(tmp_path, monkeypatch):
 
     monkeypatch.setattr("sorter.planner.generate_name", fake_gen)
     dest = tmp_path / "dest"
-    result = run_cli([
-        "move",
-        str(tmp_path),
-        "--dest",
-        str(dest),
-        "--pattern",
-        "{stem}{ext}",
-    ])
+    result = run_cli(
+        [
+            "move",
+            str(tmp_path),
+            "--dest",
+            str(dest),
+            "--pattern",
+            "{stem}{ext}",
+        ]
+    )
     assert result.exit_code == 0
     assert captured["pattern"] == "{stem}{ext}"
 
@@ -148,19 +152,21 @@ def test_move_destination_exists(tmp_path, monkeypatch):
             return None
 
     monkeypatch.setattr("sorter.planner.PluginManager", PM)
-    monkeypatch.setattr("sorter.planner.classify_file", lambda p: None)
+    monkeypatch.setattr("sorter.planner.classify_file", lambda p, r: None)
     monkeypatch.setattr("sorter.planner.generate_name", lambda *a, **k: conflict)
     monkeypatch.setattr(
         "sorter.cli.build_report", lambda *a, **k: tmp_path / "rep.xlsx"
     )
-    result = run_cli([
-        "move",
-        str(tmp_path),
-        "--dest",
-        str(dest_root),
-        "--no-dry-run",
-        "--yes",
-    ])
+    result = run_cli(
+        [
+            "move",
+            str(tmp_path),
+            "--dest",
+            str(dest_root),
+            "--no-dry-run",
+            "--yes",
+        ]
+    )
     assert result.exit_code == 1
     assert "destination already exists" in result.stdout
 
@@ -170,7 +176,7 @@ def test_report_format_option(tmp_path, monkeypatch):
     src.write_text("x")
 
     monkeypatch.setattr("sorter.planner.scan_paths", lambda dirs: [src])
-    monkeypatch.setattr("sorter.planner.classify_file", lambda p: None)
+    monkeypatch.setattr("sorter.planner.classify_file", lambda p, r: None)
     monkeypatch.setattr(
         "sorter.planner.generate_name", lambda *a, **k: tmp_path / "dest" / "a.txt"
     )
@@ -202,16 +208,18 @@ def test_scan_invalid_directory():
 def test_move_invalid_pattern(tmp_path):
     (tmp_path / "file.txt").write_text("x")
     dest = tmp_path / "dest"
-    result = run_cli([
-        "move",
-        str(tmp_path),
-        "--dest",
-        str(dest),
-        "--pattern",
-        "{foo}",
-        "--no-dry-run",
-        "--yes",
-    ])
+    result = run_cli(
+        [
+            "move",
+            str(tmp_path),
+            "--dest",
+            str(dest),
+            "--pattern",
+            "{foo}",
+            "--no-dry-run",
+            "--yes",
+        ]
+    )
     assert result.exit_code != 0
 
 
@@ -240,12 +248,14 @@ def test_move_permission_denied(monkeypatch, tmp_path):
         "sorter.cli.move_with_log",
         lambda *a, **k: (_ for _ in ()).throw(PermissionError("denied")),
     )
-    result = run_cli([
-        "move",
-        str(tmp_path),
-        "--dest",
-        str(dest),
-        "--no-dry-run",
-        "--yes",
-    ])
+    result = run_cli(
+        [
+            "move",
+            str(tmp_path),
+            "--dest",
+            str(dest),
+            "--no-dry-run",
+            "--yes",
+        ]
+    )
     assert result.exit_code == 1

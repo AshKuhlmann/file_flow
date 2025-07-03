@@ -3,6 +3,8 @@ from __future__ import annotations
 import pathlib
 from typing import Sequence
 
+from pydantic import BaseModel
+
 from .scanner import scan_paths
 from .classifier import classify_file
 from .renamer import generate_name
@@ -38,10 +40,14 @@ def plan_moves(
     config = load_config()
     plugin_manager = PluginManager(config)
     files = scan_paths(list(dirs))
+    classification_rules = {
+        k: v.model_dump() if isinstance(v, BaseModel) else v
+        for k, v in config.classification.items()
+    }
 
     mapping: list[tuple[pathlib.Path, pathlib.Path]] = []
     for f in files:
-        category = classify_file(f) or "Unsorted"
+        category = classify_file(f, classification_rules) or "Unsorted"
         target_dir = dest / category
         new_stem = plugin_manager.rename_with_plugin(f)
         if new_stem:
