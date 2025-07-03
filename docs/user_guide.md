@@ -84,3 +84,47 @@ file-sorter stats ~/Downloads
 ## FAQ
 - **Does it work on Windows?** Yes, via Python 3.9+.
 - **Is it safe?** Use `--dry-run` first to preview actions.
+
+# Getting Started: A 5-Minute Tutorial
+
+Welcome to File-Flow! Let's organize your messy `Downloads` folder.
+
+### Step 1: Installation
+
+First, install File-Flow using pip:
+
+```bash
+pip install file-flow
+```
+
+### Step 2: Perform a Dry Run
+
+A "dry run" shows you what changes will be made *without* moving any files. It's a safe way to start.
+
+Open your terminal and run the following command. Replace `~/Downloads` with the path to your downloads folder and `~/Documents/Sorted` with where you want the organized files to go.
+
+```bash
+file-flow sort --source ~/Downloads --destination ~/Documents/Sorted --dry-run
+```
+
+You'll see output like this, showing the plan:
+```
+INFO: Plan: Move '~/Downloads/receipt.pdf' to '~/Documents/Sorted/Documents/receipt.pdf'
+INFO: Plan: Move '~/Downloads/vacation.jpg' to '~/Documents/Sorted/Images/vacation.jpg'
+...
+```
+
+### Step 3: Run it for Real!
+
+If you're happy with the plan, run the same command without the `--dry-run` flag to actually move the files.
+
+```bash
+file-flow sort --source ~/Downloads --destination ~/Documents/Sorted
+```
+
+That's it! Your files are now neatly organized.
+
+### Next Steps
+
+* Learn how to [customize the rules](link-to-rules-doc.md).
+* Try the [graphical user interface](link-to-gui-doc.md) by running `file-flow-gui`.
