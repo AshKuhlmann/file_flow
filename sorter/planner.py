@@ -54,26 +54,24 @@ def plan_moves(
     pattern: str | None = None,
     config: Settings | None = None,
 ) -> list[tuple[pathlib.Path, pathlib.Path]]:
-    """Generate destination paths for all files found in ``dirs``.
+    """Create a move plan for files.
 
-    The function scans the provided directories, classifies each file and
-    optionally renames it using installed plugins. The resulting mapping can be
-    used by both the CLI and GUI interfaces to carry out move operations.
+    This function scans ``dirs`` for files, classifies each one using the
+    configured rules and generates destination paths. Files that don't match any
+    rule are placed in an ``Unsorted`` folder.
 
     Args:
-        dirs: A sequence of directories to scan for files.
-        dest: The root directory where files will be moved.
-        pattern: Optional naming pattern overriding the default renamer
-            behaviour.
+        dirs: Directories to scan for files.
+        dest: Root directory where files will be moved.
+        pattern: Optional renaming pattern.
+        config: Existing settings to use instead of :func:`load_config`.
 
     Returns:
-        A list of ``(source, destination)`` path tuples representing where each
-        file should be moved.
-
-    Raises:
-        ValueError: If ``dest`` does not represent a valid directory.
+        A list of ``(source, destination)`` tuples representing the move plan.
     """
     cfg = config or load_config()
+    # This is a dictionary comprehension, a concise way to build a dict. It's
+    # equivalent to a for loop that populates ``classification_rules``.
     classification_rules = {
         k: v.dict() if isinstance(v, BaseModel) else v
         for k, v in cfg.classification.items()
