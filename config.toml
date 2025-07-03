@@ -43,12 +43,12 @@ extensions = [".epub", ".mobi"]
 [classification.Packages]
 extensions = [".deb", ".rpm", ".pkg"]
 
-[plugins.exif_renamer]
+[plugins.exif]
 enabled = true
 # Available tokens: {year}, {month}, {day}, {hour}, {minute}, {second}, {model}, {make}
 pattern = "{year}-{month}-{day}_{hour}.{minute}.{second}_{model}"
 
-[plugins.id3_renamer]
+[plugins.id3]
 enabled = true
 # Available tokens: {artist}, {album}, {title}, {track_number}, {genre}
 pattern = "{artist} - {album} - {track_number:02d} - {title}"

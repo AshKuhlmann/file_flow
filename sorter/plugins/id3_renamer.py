@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import pathlib
 import logging
-from typing import Optional, Any
+from typing import Any, Optional
 
 from mutagen.easyid3 import EasyID3
 from mutagen.flac import FLAC
@@ -10,8 +12,15 @@ from .base import RenamerPlugin
 from ..utils import sanitize_filename
 
 
-class Plugin(RenamerPlugin):
-    """A renamer plugin for audio files based on ID3, MP4, or FLAC tags."""
+class Id3Renamer(RenamerPlugin):
+    """Rename audio files using ID3/FLAC/MP4 tags."""
+
+    def __init__(self, config: dict | None = None) -> None:
+        super().__init__(config)
+
+    @property
+    def name(self) -> str:  # pragma: no cover - simple property
+        return "id3"
 
     def rename(self, source_path: pathlib.Path) -> Optional[str]:
         suffix = source_path.suffix.lower()

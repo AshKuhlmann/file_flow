@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import pathlib
 import re
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
 import exifread
 
@@ -8,8 +10,15 @@ from .base import RenamerPlugin
 from ..utils import sanitize_filename
 
 
-class Plugin(RenamerPlugin):
-    """A renamer plugin for photos based on EXIF data."""
+class ExifRenamer(RenamerPlugin):
+    """Rename photos based on EXIF metadata."""
+
+    def __init__(self, config: Dict[str, Any] | None = None) -> None:
+        super().__init__(config)
+
+    @property
+    def name(self) -> str:  # pragma: no cover - simple property
+        return "exif"
 
     def rename(self, source_path: pathlib.Path) -> Optional[str]:
         # This plugin only handles common image file types
