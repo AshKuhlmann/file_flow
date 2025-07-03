@@ -9,6 +9,13 @@ try:
 except ImportError:  # pragma: no cover - optional dep missing
     _pd = None  # type: ignore
 
+try:
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as _plt
+except ImportError:  # pragma: no cover - optional dep missing
+    _plt = None  # type: ignore
+
 
 def build_dashboard(
     logs: list[pathlib.Path],
@@ -18,11 +25,8 @@ def build_dashboard(
     """Generate HTML dashboard from *logs*; return output path."""
     if _pd is None:
         raise ModuleNotFoundError("pandas is required for build_dashboard")
-
-    import matplotlib
-
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as _plt
+    if _plt is None:
+        raise ModuleNotFoundError("matplotlib is required for build_dashboard")
 
     rows = []
     for lp in logs:

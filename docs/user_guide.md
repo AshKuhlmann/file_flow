@@ -37,6 +37,44 @@ For example:
 file-sorter move ~/Downloads --dest ~/Sorted --pattern "{date}-{stem}{ext}"
 ```
 
+## Writing Renamer Plugins
+
+File-Sorter can be extended with third-party plugins that implement
+`RenamerPlugin`. Plugins are discovered via the `file_flow.renamers`
+entry point.
+
+```python
+from pathlib import Path
+from sorter.plugins.base import RenamerPlugin
+
+
+class SamplePlugin(RenamerPlugin):
+    @property
+    def name(self) -> str:
+        return "sample"
+
+    def rename(self, file_path: Path) -> str | None:
+        return self.pattern.format(stem=file_path.stem, ext=file_path.suffix)
+```
+
+Expose the plugin in your `pyproject.toml`:
+
+```toml
+[project.entry-points."file_flow.renamers"]
+sample = "file_flow_sample_plugin.sample:SamplePlugin"
+```
+
+Enable it in `config.toml` with optional configuration keys
+`enabled` and `pattern`:
+
+```toml
+[plugins.sample]
+enabled = true
+pattern = "{stem}"
+```
+
+See `examples/file_flow_sample_plugin` for a complete example package.
+
 ## Analytics
 After moving files you can generate a dashboard:
 ```bash
