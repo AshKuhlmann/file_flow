@@ -191,7 +191,9 @@ class MainWindow(QMainWindow):  # type: ignore[misc]
             progress_cb(100, None)
             return mapping, report, dry
 
-        def done(result: tuple[list[tuple[pathlib.Path, pathlib.Path]], pathlib.Path, bool]) -> None:
+        def done(
+            result: tuple[list[tuple[pathlib.Path, pathlib.Path]], pathlib.Path, bool]
+        ) -> None:
             mapping, report, dry_flag = result
             self._mapping = mapping
             self.btn_move.setEnabled(not dry_flag)
