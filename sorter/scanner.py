@@ -1,5 +1,4 @@
 import logging
-import os
 import pathlib
 from typing import Set, Tuple
 
@@ -48,34 +47,32 @@ def scan_paths(
         seen_dirs.add(dir_id)
 
         try:
-            with os.scandir(dir_path) as it:
-                for entry in it:
-                    name = entry.name
-                    if skip_hidden and name.startswith("."):
-                        continue
-                    entry_path = pathlib.Path(entry.path)
-                    try:
-                        if entry.is_symlink():
-                            if not follow_symlinks:
-                                continue
-                            target_path = entry_path.resolve()
-                        else:
-                            target_path = entry_path
+            for entry in dir_path.iterdir():
+                name = entry.name
+                if skip_hidden and name.startswith("."):
+                    continue
+                try:
+                    if entry.is_symlink():
+                        if not follow_symlinks:
+                            continue
+                        target_path = entry.resolve()
+                    else:
+                        target_path = entry
 
-                        if entry.is_dir(follow_symlinks=follow_symlinks):
-                            _scan_dir(target_path)
-                        elif entry.is_file(follow_symlinks=follow_symlinks):
-                            try:
-                                st = entry.stat(follow_symlinks=follow_symlinks)
-                            except OSError:
-                                continue
-                            fid: FileId = (st.st_dev, st.st_ino)
-                            if fid in seen_files:
-                                continue
-                            seen_files.add(fid)
-                            result.append(target_path.resolve())
-                    except OSError:
-                        continue
+                    if entry.is_dir():
+                        _scan_dir(target_path)
+                    elif entry.is_file():
+                        try:
+                            st = entry.stat()
+                        except OSError:
+                            continue
+                        fid: FileId = (st.st_dev, st.st_ino)
+                        if fid in seen_files:
+                            continue
+                        seen_files.add(fid)
+                        result.append(target_path.resolve())
+                except OSError:
+                    continue
         except OSError:
             return
 
