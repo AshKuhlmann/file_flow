@@ -1,7 +1,9 @@
-import argparse
 import logging
-import pathlib
-from typing import Iterable
+from pathlib import Path
+from typing import Iterable, Optional
+
+import typer
+from typing_extensions import Annotated
 
 from . import __version__
 from .logging_config import setup_logging
@@ -14,6 +16,45 @@ from .dupes import find_duplicates, delete_older as _delete_older
 from .cli_utils import handle_cli_errors
 from .config import load_config, Settings
 
+app = typer.Typer(
+    name="sorter",
+    help="A smart file sorter and organizer.",
+    add_completion=False,
+)
+
+
+def _version_callback(value: bool) -> None:
+    if value:
+        typer.echo(__version__)
+        raise typer.Exit()
+
+
+@app.callback()
+def _main_callback(
+    ctx: typer.Context,
+    verbose: Annotated[
+        int,
+        typer.Option("-v", "--verbose", count=True, help="Increase verbosity"),
+    ] = 0,
+    version: Annotated[
+        Optional[bool],
+        typer.Option(
+            "--version",
+            callback=_version_callback,
+            is_eager=True,
+            help="Show version and exit",
+        ),
+    ] = None,
+) -> None:
+    """Set up logging and load configuration."""
+    log_level = logging.DEBUG if verbose else logging.INFO
+    setup_logging(console_level=log_level)
+    if verbose:
+        log.debug("Verbose logging enabled.")
+    else:
+        log.debug("Logging level: %s", logging.getLevelName(log_level))
+    ctx.obj = load_config()
+
 log = logging.getLogger(__name__)
 
 
@@ -22,9 +63,14 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 
+@app.command("scan")
 @handle_cli_errors
-def handle_scan(args: argparse.Namespace, cfg: Settings) -> None:
-    dirs = [p.resolve() for p in args.dirs]
+def handle_scan(
+    ctx: typer.Context,
+    dirs: Annotated[list[Path], typer.Argument()],
+) -> None:
+    cfg: Settings = ctx.obj
+    dirs = [p.resolve() for p in dirs]
     for d in dirs:
         if not d.exists():
             raise FileNotFoundError(f"{d} does not exist")
@@ -36,24 +82,37 @@ def handle_scan(args: argparse.Namespace, cfg: Settings) -> None:
             log.debug("found: %s", f)
 
 
+@app.command("report")
 @handle_cli_errors
-def handle_report(args: argparse.Namespace, cfg: Settings) -> None:
-    dirs = [p.resolve() for p in args.dirs]
+def handle_report(
+    ctx: typer.Context,
+    dirs: Annotated[list[Path], typer.Argument()],
+    dest: Annotated[Optional[Path], typer.Option("--dest")] = None,
+    pattern: Annotated[Optional[str], typer.Option("--pattern")] = None,
+    auto_open: Annotated[bool, typer.Option("--auto-open")] = False,
+    fmt: Annotated[str, typer.Option("--format")] = "xlsx",
+) -> None:
+    cfg: Settings = ctx.obj
+    dirs = [p.resolve() for p in dirs]
     for d in dirs:
         if not d.exists():
             raise FileNotFoundError(f"{d} does not exist")
-    base = args.dest or pathlib.Path.cwd()
-    mapping = plan_moves(dirs, base, pattern=args.pattern)
+    base = dest or Path.cwd()
+    mapping = plan_moves(dirs, base, pattern=pattern)
     log.info("%d files will be included in the report", len(mapping))
     for src, dst in mapping:
         log.debug("map %s -> %s", src, dst)
-    out = build_report(mapping, auto_open=args.auto_open, fmt=args.fmt)
+    out = build_report(mapping, auto_open=auto_open, fmt=fmt)
     log.info("Report ready: %s", out)
 
 
+@app.command("review")
 @handle_cli_errors
-def handle_review(args: argparse.Namespace, cfg: Settings) -> None:
-    dirs = [p.resolve() for p in args.dirs]
+def handle_review(
+    ctx: typer.Context, dirs: Annotated[list[Path], typer.Argument()]
+) -> None:
+    cfg: Settings = ctx.obj
+    dirs = [p.resolve() for p in dirs]
     for d in dirs:
         if not d.exists():
             raise FileNotFoundError(f"{d} does not exist")
@@ -71,24 +130,37 @@ def handle_review(args: argparse.Namespace, cfg: Settings) -> None:
         log.info("  • %s", p)
 
 
+@app.command("move")
 @handle_cli_errors
-def handle_move(args: argparse.Namespace, cfg: Settings) -> None:
-    dirs = [p.resolve() for p in args.dirs]
+def handle_move(
+    ctx: typer.Context,
+    dirs: Annotated[list[Path], typer.Argument()],
+    dest: Annotated[Path, typer.Option("--dest")],
+    pattern: Annotated[Optional[str], typer.Option("--pattern")] = None,
+    yes: Annotated[bool, typer.Option("--yes", help="skip confirmation")] = False,
+    dry_run: Annotated[
+        bool,
+        typer.Option("--dry-run/--no-dry-run", help="simulate without moving"),
+    ] = True,
+) -> None:
+    cfg: Settings = ctx.obj
+    cfg.dry_run = dry_run
+    dirs = [p.resolve() for p in dirs]
     for d in dirs:
         if not d.exists():
             raise FileNotFoundError(f"{d} does not exist")
     try:
-        log.debug("Beginning move operation into %s", args.dest)
-        mapping = plan_moves(dirs, args.dest, pattern=args.pattern)
+        log.debug("Beginning move operation into %s", dest)
+        mapping = plan_moves(dirs, dest, pattern=pattern)
         log.info("%d files to process", len(mapping))
         for src, dst in mapping:
             log.debug("plan move %s -> %s", src, dst)
         report_path = build_report(mapping, auto_open=False)
         log.info("Report ready: %s", report_path)
-        if args.dry_run:
+        if dry_run:
             log.warning("Dry-run complete — no files were moved.")
             return
-        if not args.yes:
+        if not yes:
             ans = input("Proceed with move? [y/N]: ")
             if ans.strip().lower() not in {"y", "yes"}:
                 log.info("User cancelled operation.")
@@ -103,18 +175,28 @@ def handle_move(args: argparse.Namespace, cfg: Settings) -> None:
         raise
 
 
+@app.command("undo")
 @handle_cli_errors
-def handle_undo(args: argparse.Namespace, cfg: Settings) -> None:
-    log.debug("Rolling back moves using log %s", args.log_file)
+def handle_undo(ctx: typer.Context, log_file: Annotated[Path, typer.Argument()]) -> None:
+    cfg: Settings = ctx.obj
+    log.debug("Rolling back moves using log %s", log_file)
     from .rollback import rollback as _rollback
 
-    _rollback(args.log_file)
+    _rollback(log_file)
     log.info("Rollback complete.")
 
 
+@app.command("dupes")
 @handle_cli_errors
-def handle_dupes(args: argparse.Namespace, cfg: Settings) -> None:
-    dirs = [p.resolve() for p in args.dirs]
+def handle_dupes(
+    ctx: typer.Context,
+    dirs: Annotated[list[Path], typer.Argument()],
+    delete_older: Annotated[bool, typer.Option("--delete-older")] = False,
+    hardlink: Annotated[bool, typer.Option("--hardlink")] = False,
+    algorithm: Annotated[str, typer.Option("--algorithm")] = "sha256",
+) -> None:
+    cfg: Settings = ctx.obj
+    dirs = [p.resolve() for p in dirs]
     for d in dirs:
         if not d.exists():
             raise FileNotFoundError(f"{d} does not exist")
@@ -123,9 +205,9 @@ def handle_dupes(args: argparse.Namespace, cfg: Settings) -> None:
     log.info(
         "Scanning %d files for duplicates using %s",
         len(files),
-        args.algorithm,
+        algorithm,
     )
-    groups = find_duplicates(files, algorithm=args.algorithm)
+    groups = find_duplicates(files, algorithm=algorithm)
     if not groups:
         log.info("No duplicates detected.")
         return
@@ -138,162 +220,89 @@ def handle_dupes(args: argparse.Namespace, cfg: Settings) -> None:
         log.debug("paths: %s", ", ".join(str(p) for p in paths))
         for p in paths:
             log.info("  • %s", p)
-    if args.delete_older:
+    if delete_older:
         confirm = input("Delete older copies? [y/N]: ")
         if confirm.strip().lower() in {"y", "yes"}:
             for paths in groups.values():
                 for removed in _delete_older(paths):
                     log.info("- deleted %s", removed)
-    if args.hardlink and not args.delete_older:
+    if hardlink and not delete_older:
         log.warning("⚠️  hardlink requires delete_older to leave single copy.")
 
 
+@app.command("schedule")
 @handle_cli_errors
-def handle_schedule(args: argparse.Namespace, cfg: Settings) -> None:
+def handle_schedule(
+    ctx: typer.Context,
+    dirs: Annotated[list[Path], typer.Argument()],
+    dest: Annotated[Path, typer.Option("--dest")],
+    cron: Annotated[str, typer.Option("--cron")] = "0 3 * * *",
+) -> None:
+    cfg: Settings = ctx.obj
     from .scheduler import validate_cron, install_job
 
     log.debug(
         "Scheduling job '%s' for dirs: %s",
-        args.cron,
-        ", ".join(str(d) for d in args.dirs),
+        cron,
+        ", ".join(str(d) for d in dirs),
     )
-    validate_cron(args.cron)
-    install_job(args.cron, dirs=[*args.dirs], dest=args.dest)
+    validate_cron(cron)
+    install_job(cron, dirs=[*dirs], dest=dest)
     log.info("Scheduler entry installed.")
 
 
+@app.command("stats")
 @handle_cli_errors
-def handle_stats(args: argparse.Namespace, cfg: Settings) -> None:
-    logs = sorted(args.logs_dir.glob("file-sort-log_*.jsonl"))
+def handle_stats(
+    ctx: typer.Context,
+    logs_dir: Annotated[Path, typer.Argument()],
+    out: Annotated[Optional[Path], typer.Option("--out")] = None,
+) -> None:
+    cfg: Settings = ctx.obj
+    logs = sorted(logs_dir.glob("file-sort-log_*.jsonl"))
     if not logs:
         log.error("No log files found.")
         raise FileNotFoundError("No log files found.")
     from .stats import build_dashboard
 
-    dash = build_dashboard(logs, dest=args.out)
+    dash = build_dashboard(logs, dest=out)
     log.info("Dashboard written to %s", dash)
     log.debug("Processed %d log files", len(logs))
 
 
+@app.command("learn-clusters")
 @handle_cli_errors
-def handle_learn_clusters(args: argparse.Namespace, cfg: Settings) -> None:
+def handle_learn_clusters(
+    ctx: typer.Context, source_dir: Annotated[Path, typer.Argument()]
+) -> None:
+    cfg: Settings = ctx.obj
     from . import clustering
     import shutil
 
-    files = scan_paths([args.source_dir])
+    files = scan_paths([source_dir])
     clustered_df = clustering.train_cluster_model(files)
     if clustered_df is None:
         return
     for cluster_id, group in clustered_df.groupby("cluster"):
         cluster_name = f"Cluster {cluster_id}"
-        cluster_dir = args.source_dir / cluster_name
+        cluster_dir = source_dir / cluster_name
         cluster_dir.mkdir(exist_ok=True)
         for file_path in group["path"]:
             shutil.move(str(file_path), str(cluster_dir))
     log.info("Files have been sorted into cluster subdirectories.")
 
 
+@app.command("train")
 @handle_cli_errors
-def handle_train(args: argparse.Namespace, cfg: Settings) -> None:
+def handle_train(
+    ctx: typer.Context,
+    logs_dir: Annotated[Path, typer.Argument()] = Path.cwd(),
+) -> None:
+    cfg: Settings = ctx.obj
     from . import supervised
 
-    log.debug("Training classifier using logs in %s", args.logs_dir)
-    supervised.train_supervised_model(args.logs_dir)
-
-
-# ---------------------------------------------------------------------------
-# Argument parser
-# ---------------------------------------------------------------------------
-
-
-def get_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="A smart file sorter and organizer.")
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        action="count",
-        default=0,
-        help="Increase verbosity",
-    )
-    parser.add_argument(
-        "--version",
-        action="version",
-        version=__version__,
-    )
-    subparsers = parser.add_subparsers(dest="command", required=True)
-
-    # scan
-    sp = subparsers.add_parser("scan", help="Scan directories and report file count.")
-    sp.add_argument("dirs", nargs="+", type=pathlib.Path)
-    sp.set_defaults(func=handle_scan)
-
-    # report
-    sp = subparsers.add_parser("report", help="Generate a report of proposed moves.")
-    sp.add_argument("dirs", nargs="+", type=pathlib.Path)
-    sp.add_argument("--dest", type=pathlib.Path, default=None)
-    sp.add_argument("--pattern", type=str, default=None)
-    sp.add_argument("--auto-open", action="store_true")
-    sp.add_argument("--format", dest="fmt", default="xlsx")
-    sp.set_defaults(func=handle_report)
-
-    # review
-    sp = subparsers.add_parser(
-        "review", help="Queue files for review and list due items."
-    )
-    sp.add_argument("dirs", nargs="+", type=pathlib.Path)
-    sp.set_defaults(func=handle_review)
-
-    # move
-    sp = subparsers.add_parser("move", help="Scan, classify and move files.")
-    sp.add_argument("dirs", nargs="+", type=pathlib.Path)
-    sp.add_argument("--dest", type=pathlib.Path, required=True)
-    sp.add_argument("--pattern", type=str, default=None)
-    sp.add_argument("--yes", action="store_true", help="skip confirmation")
-    sp.add_argument("--dry-run", dest="dry_run", action="store_true", default=True)
-    sp.add_argument("--no-dry-run", dest="dry_run", action="store_false")
-    sp.set_defaults(func=handle_move)
-
-    # undo
-    sp = subparsers.add_parser("undo", help="Undo file moves recorded in log file.")
-    sp.add_argument("log_file", type=pathlib.Path)
-    sp.set_defaults(func=handle_undo)
-
-    # dupes
-    sp = subparsers.add_parser("dupes", help="Find duplicate files.")
-    sp.add_argument("dirs", nargs="+", type=pathlib.Path)
-    sp.add_argument("--delete-older", action="store_true")
-    sp.add_argument("--hardlink", action="store_true")
-    sp.add_argument("--algorithm", default="sha256")
-    sp.set_defaults(func=handle_dupes)
-
-    # schedule
-    sp = subparsers.add_parser(
-        "schedule", help="Install nightly dry-run job to email report."
-    )
-    sp.add_argument("dirs", nargs="+", type=pathlib.Path)
-    sp.add_argument("--dest", type=pathlib.Path, required=True)
-    sp.add_argument("--cron", default="0 3 * * *")
-    sp.set_defaults(func=handle_schedule)
-
-    # stats
-    sp = subparsers.add_parser("stats", help="Generate HTML dashboard from move logs.")
-    sp.add_argument("logs_dir", type=pathlib.Path)
-    sp.add_argument("--out", type=pathlib.Path, default=None)
-    sp.set_defaults(func=handle_stats)
-
-    # learn-clusters
-    sp = subparsers.add_parser(
-        "learn-clusters", help="Analyze a directory to discover categories."
-    )
-    sp.add_argument("source_dir", type=pathlib.Path)
-    sp.set_defaults(func=handle_learn_clusters)
-
-    # train
-    sp = subparsers.add_parser("train", help="Train a classifier from move history.")
-    sp.add_argument("logs_dir", type=pathlib.Path, default=pathlib.Path.cwd())
-    sp.set_defaults(func=handle_train)
-
-    return parser
+    log.debug("Training classifier using logs in %s", logs_dir)
+    supervised.train_supervised_model(logs_dir)
 
 
 # ---------------------------------------------------------------------------
@@ -302,21 +311,11 @@ def get_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Iterable[str] | None = None) -> None:
-    parser = get_parser()
-    args = parser.parse_args(list(argv) if argv is not None else None)
-    log_level = logging.DEBUG if args.verbose else logging.INFO
-    setup_logging(console_level=log_level)
-    if args.verbose:
-        log.debug("Verbose logging enabled.")
-    else:
-        log.debug("Logging level: %s", logging.getLevelName(log_level))
-    cfg = load_config()
-    if hasattr(args, "func"):
-        if hasattr(args, "dry_run"):
-            cfg.dry_run = args.dry_run
-        args.func(args, cfg)
-    else:
-        parser.print_help()
+    """Entry point for ``file-sorter`` command."""
+    app(  # type: ignore[call-arg]
+        args=list(argv) if argv is not None else None,
+        prog_name=None,
+    )
 
 
 if __name__ == "__main__":  # pragma: no cover - manual execution
