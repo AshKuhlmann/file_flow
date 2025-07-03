@@ -9,11 +9,14 @@ File-Sorter automatically organizes messy download folders. Point it at a direct
 ![Demo](media/demo.svg)
 
 ## Installation
+Install via `pip install file-flow` and run commands with the `file-sorter` CLI.
 ```bash
 pip install file-flow
 ```
 
 ## Basic Usage
+The package installs under the name `file-flow`, while the command-line
+interface is `file-sorter`.
 ```bash
 file-sorter move ~/Downloads --dest ~/Sorted --dry-run
 ```
