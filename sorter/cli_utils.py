@@ -49,3 +49,4 @@ def human_readable_size(size: int) -> str:
         if value < 1024.0 or unit == units[-1]:
             return f"{value:.1f} {unit}"
         value /= 1024.0
+    return f"{value:.1f} {units[-1]}"

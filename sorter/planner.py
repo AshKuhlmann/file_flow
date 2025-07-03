@@ -75,7 +75,7 @@ def plan_moves(
     """
     cfg = config or load_config()
     classification_rules = {
-        k: v.model_dump() if isinstance(v, BaseModel) else v
+        k: v.dict() if isinstance(v, BaseModel) else v
         for k, v in cfg.classification.items()
     }
     planner = Planner(classification_rules, cfg)
