@@ -1,7 +1,0 @@
-[project]
-name = "file-flow-sample-plugin"
-version = "0.1.0"
-description = "Sample renamer plugin for File-Sorter"
-
-[project.entry-points."file_flow.renamers"]
-sample = "file_flow_sample_plugin.sample:SamplePlugin"

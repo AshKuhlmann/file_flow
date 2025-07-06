@@ -1,1 +1,0 @@
-"""Renamer plugin package."""

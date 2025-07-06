@@ -1,0 +1,20 @@
+{
+  "name": "my-file-sorter-js",
+  "version": "1.0.0",
+  "description": "A desktop app to sort files using Electron and React.",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "concurrently \"npm:react-start\" \"npm:electron-start\"",
+    "react-start": "cd react-ui && npm start",
+    "electron-start": "wait-on http://localhost:3000 && electron ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "electron": "^28.2.4",
+    "electron-is-dev": "^3.0.1",
+    "wait-on": "^7.2.0"
+  }
+}
